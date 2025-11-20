@@ -40,7 +40,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({ title }) => {
             className="bg-black text-white inline-block pl-6 pr-10 py-1.5 font-bold tracking-wide text-sm relative z-10"
             style={blackBlockStyle}
         >
-          {title}
+          {title || '\u00A0'}
         </div>
       </div>
       <div className="border-b-2 border-black mt-0.5 w-full"></div>
