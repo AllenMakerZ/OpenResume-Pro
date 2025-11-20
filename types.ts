@@ -50,5 +50,5 @@ export interface ResumeData {
   work: WorkItem[];
   projects: ProjectItem[];
   others: SectionItem[]; // Skills, Awards, etc.
-  summary: SectionItem[]; // Personal summary points
+  summary: string; // HTML content for Personal summary
 }

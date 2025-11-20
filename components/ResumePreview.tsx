@@ -255,14 +255,10 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ d
                     {data.sections.summary.visible && (
                     <section className="break-inside-avoid mb-6">
                         <SectionHeader title={data.sections.summary.title} />
-                        <ul className="list-disc list-outside ml-4 space-y-1.5">
-                        {data.summary.map((item) => (
-                            <li key={item.id} className="text-gray-800 text-justify break-inside-avoid">
-                                <span className="font-bold text-black">{item.label}：</span>
-                                <span>{item.content}</span>
-                            </li>
-                        ))}
-                        </ul>
+                        <div 
+                             className="text-sm text-gray-800 text-justify [&>ul]:list-disc [&>ul]:list-outside [&>ul]:ml-4 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:list-outside [&>ol]:ml-4 [&>ol]:space-y-1 [&_li]:mb-0.5 [&_a]:text-black [&_a]:underline [&_a]:decoration-gray-500 [&_a]:underline-offset-2" 
+                             dangerouslySetInnerHTML={{ __html: data.summary }} 
+                         />
                     </section>
                     )}
                 </div>

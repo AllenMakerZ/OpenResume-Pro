@@ -70,7 +70,7 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
       if(section === 'education') newItem = { ...newItem, school: 'New School', degree: 'Degree', startDate: '2023', endDate: '2024', location: 'City' };
       if(section === 'work') newItem = { ...newItem, company: 'New Company', position: 'Role', startDate: '2023', endDate: 'Present', location: 'City', details: '<ul><li>New Role Detail</li></ul>' };
       if(section === 'projects') newItem = { ...newItem, name: 'New Project', role: 'Role', startDate: '2023', endDate: '2024', location: 'City', details: '<ul><li>Project Detail</li></ul>' };
-      if(section === 'others' || section === 'summary') newItem = { ...newItem, label: 'Label', content: 'Content' };
+      if(section === 'others') newItem = { ...newItem, label: 'Label', content: 'Content' };
 
       onChange({ ...data, [section]: [...(data[section] as any[]), newItem] });
   };
@@ -223,16 +223,11 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
             title={data.sections.summary.title}
             onUpdateTitle={(val) => updateSectionConfig('summary', 'title', val)}
         />
-        {data.summary.map((item) => (
-             <div key={item.id} className="mb-2 p-2 bg-gray-50 rounded border relative flex gap-2 items-start">
-                <div className="flex-1 space-y-2">
-                    <Input label="特质 (如: 积极主动)" value={item.label} onChange={(e) => updateItem<SectionItem>('summary', item.id, 'label', e.target.value)} />
-                    <textarea className="w-full border rounded p-1 text-sm" rows={3} value={item.content} onChange={(e) => updateItem<SectionItem>('summary', item.id, 'content', e.target.value)} />
-                </div>
-                <button onClick={() => deleteItem('summary', item.id)} className="text-red-500 mt-6"><Trash2 size={16} /></button>
-             </div>
-        ))}
-        <AddButton onClick={() => addItem('summary')} label="添加总结" />
+        <RichInput 
+            label="内容 (支持富文本)" 
+            value={data.summary} 
+            onChange={(val) => onChange({ ...data, summary: val })} 
+        />
       </SectionWrapper>
     </div>
   );
