@@ -11,8 +11,8 @@ import jsPDF from 'jspdf';
 // 默认布局配置：宽松适中，适合 A4
 const DEFAULT_LAYOUT: LayoutSettings = {
   fontSize: 14,
-  lineHeight: 1.4,
-  pagePadding: 20
+  lineHeight: 1.6,
+  pagePadding: 14
 };
 
 export default function App() {
@@ -40,7 +40,8 @@ export default function App() {
   const previewRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
-  const [viewMode, setViewMode] = useState<'image' | 'pdf'>('image');
+  const [viewMode, setViewMode] = useState<'image' | 'pdf'>('pdf');
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
 
   // Persist data
   useEffect(() => {
@@ -59,9 +60,9 @@ export default function App() {
       if (!previewRef.current) return;
       const heightPx = previewRef.current.offsetHeight;
       // A4 height in px at 96DPI is approx 1123px (297mm)
-      // Using a slightly smaller value to ensure we catch the overflow correctly
-      const pageHeight = 1122;
-      setTotalPages(Math.max(1, Math.ceil(heightPx / pageHeight)));
+      const pageHeight = 1123;
+      // Use -1 tolerance to handle potential sub-pixel rounding differences
+      setTotalPages(Math.max(1, Math.ceil((heightPx - 1) / pageHeight)));
     };
 
     // Initial check
@@ -267,16 +268,46 @@ export default function App() {
             </button>
             <button onClick={handlePrint} className="hidden lg:flex items-center gap-2 px-4 py-2 bg-black hover:bg-gray-800 text-white rounded transition-colors text-sm font-medium shadow-md" title="推荐使用此方式，可保留超链接和文字选中功能">
               <Printer size={16} />
-              打印
+              打印/另存为PDF（推荐）
             </button>
-            <button onClick={handleExportPNG} disabled={isExporting} className="hidden sm:flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded transition-colors text-sm font-medium">
-              <FileImage size={16} />
-              PNG
-            </button>
-            <button onClick={handleExportPDF} disabled={isExporting} className="hidden sm:flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded transition-colors text-sm font-medium">
-              <Download size={16} />
-              PDF
-            </button>
+
+            {/* Combined Download Button */}
+            <div className="relative">
+              <button
+                onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+                className="hidden sm:flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded transition-colors text-sm font-medium"
+              >
+                <Download size={16} />
+                下载
+              </button>
+
+              {showDownloadMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-30"
+                    onClick={() => setShowDownloadMenu(false)}
+                  ></div>
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-40 animate-fade-in">
+                    <button
+                      onClick={() => { handleExportPNG(); setShowDownloadMenu(false); }}
+                      disabled={isExporting}
+                      className="w-full text-left px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <FileImage size={16} />
+                      下载为 PNG
+                    </button>
+                    <button
+                      onClick={() => { handleExportPDF(); setShowDownloadMenu(false); }}
+                      disabled={isExporting}
+                      className="w-full text-left px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <FileText size={16} />
+                      下载为 PDF（图片版）
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 

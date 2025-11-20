@@ -26,14 +26,6 @@ interface EditorProps {
   onChange: (newData: ResumeData) => void;
 }
 
-const ALL_SECTIONS: { key: SectionKey; label: string }[] = [
-    { key: 'education', label: '教育经历' },
-    { key: 'work', label: '工作经历' },
-    { key: 'projects', label: '项目经历' },
-    { key: 'others', label: '其他 (技能/证书)' },
-    { key: 'summary', label: '个人总结' }
-];
-
 const SectionHeaderControl = ({ 
   title, 
   onUpdateTitle, 
@@ -260,24 +252,6 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
       onChange({ ...data, [section]: arrayMove(list, oldIndex, newIndex) });
   };
 
-  // Section Management
-  const removeSection = (key: SectionKey) => {
-      if (window.confirm(`确定要移除"${data.sections[key].title}"模块吗？(数据会保留，可随时添加回来)`)) {
-        onChange({
-            ...data,
-            sectionOrder: data.sectionOrder.filter(k => k !== key)
-        });
-      }
-  };
-
-  const addSection = (key: SectionKey) => {
-      onChange({
-          ...data,
-          sectionOrder: [...data.sectionOrder, key]
-      });
-      setOpenSection(key);
-  };
-
   const renderSectionContent = (key: SectionKey) => {
       const isSorting = sortingSection === key;
 
@@ -415,10 +389,6 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
                                     <Input label="标签 (如: 技能)" value={item.label} onChange={(e) => updateItem<SectionItem>('others', item.id, 'label', e.target.value)} />
                                     <textarea className="w-full border rounded p-1 text-sm" rows={2} value={item.content} onChange={(e) => updateItem<SectionItem>('others', item.id, 'content', e.target.value)} />
                                 </div>
-                                {/* Delete is available in Sort Manager, but "Others" are small so maybe keep it here too? 
-                                    Requirements said "internal only focus content", let's stick to rule and remove it from here to encourage using sort manager 
-                                */}
-                                {/* <button onClick={() => deleteItem('others', item.id)} className="text-red-500 mt-6"><Trash2 size={16} /></button> */}
                             </div>
                         ))}
                         <AddButton onClick={() => addItem('others')} label="添加其他项" />
@@ -442,8 +412,6 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
                 return null;
       }
   }
-
-  const availableSections = ALL_SECTIONS.filter(s => !data.sectionOrder.includes(s.key));
 
   return (
     <div className="bg-white border-r h-full overflow-y-auto p-4 space-y-4 shadow-sm">
@@ -476,7 +444,7 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
                                 onToggle={() => toggleSection(key)}
                                 isVisible={data.sections[key].visible}
                                 onToggleVisibility={() => updateSectionConfig(key, 'visible', !data.sections[key].visible)}
-                                onDelete={() => removeSection(key)}
+                                // No delete prop provided here, making sections undeletable
                                 // Sort Props
                                 isSorting={sortingSection === key}
                                 onToggleSort={() => toggleSorting(key)}
@@ -490,25 +458,6 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
             </SortableContext>
         </DndContext>
       </div>
-
-      {/* Add Module Section */}
-      {availableSections.length > 0 && (
-          <div className="mt-6">
-              <h3 className="text-sm font-bold text-gray-700 mb-2">添加模块</h3>
-              <div className="grid grid-cols-2 gap-2">
-                  {availableSections.map(s => (
-                      <button 
-                        key={s.key}
-                        onClick={() => addSection(s.key)}
-                        className="flex items-center gap-2 p-2 border border-dashed border-gray-300 rounded hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 text-gray-600 text-sm transition-all"
-                      >
-                          <Plus size={14} />
-                          {s.label}
-                      </button>
-                  ))}
-              </div>
-          </div>
-      )}
       
     </div>
   );

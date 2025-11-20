@@ -219,19 +219,20 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ d
           .print-container {
             display: table;
             width: 100%;
-            padding-left: ${paddingStr}; 
-            padding-right: ${paddingStr};
+            border-collapse: collapse; /* Ensure no extra spacing */
             box-sizing: border-box;
           }
           
           .print-header-spacer {
             display: table-header-group;
             height: ${paddingStr};
+            line-height: 0; /* Remove font-related spacing */
           }
           
           .print-footer-spacer {
             display: table-footer-group;
             height: ${paddingStr};
+            line-height: 0;
           }
           
           .print-body {
@@ -244,11 +245,14 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ d
           
           .print-cell {
             display: table-cell;
+            padding-left: ${paddingStr};
+            padding-right: ${paddingStr};
           }
           
           .spacer-content {
              height: ${paddingStr}; 
              visibility: hidden;
+             line-height: 0;
           }
         }
         

@@ -50,18 +50,6 @@ export const INITIAL_RESUME_DATA: ResumeData = {
 <li><b>执行落地:</b> 协助团队推出联名款产品，完成包装设计、功能定义、UI界面的需求梳理，联合多部门实现具体需求并验收</li>
 <li><b>方法论优化：</b>通过一次设计复盘，结合公司工作流程汇总出岗位To-Do文档被部门采纳用于辅导新人</li>
 </ul>`
-    },
-    {
-      id: 'work-2',
-      company: '某某集团（设计师）',
-      position: '',
-      startDate: '2020年03月',
-      endDate: '2020年04月',
-      location: '城市',
-      details: `<ul>
-<li><b>桌面调研:</b> 对竞品公司的大尺寸解决方案进行线上调研，进而对相关品类进行差异化定位，从而提出创新产品的市场切入点被小组采纳</li>
-<li><b>组织能力:</b> 组织头脑风暴会议，协助组员进行用户画像和使用场景的定义，最终进行产品表现以及汇报，取得项目奖金</li>
-</ul>`
     }
   ],
   projects: [
@@ -81,7 +69,7 @@ export const INITIAL_RESUME_DATA: ResumeData = {
   ],
   others: [
     { id: 'other-1', label: '技能', content: '熟练掌握相关设计软件、办公软件、AI辅助工具' },
-    { id: 'other-2', label: '证书/执照', content: 'PMP项目管理资格认证' },
+    { id: 'other-2', label: '证书', content: 'PMP项目管理资格认证' },
     { id: 'other-3', label: '奖项', content: '某年度创意设计奖项' },
     { id: 'other-4', label: '语言', content: '外语流利' }
   ],
