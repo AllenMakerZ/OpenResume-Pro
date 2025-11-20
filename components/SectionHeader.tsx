@@ -19,7 +19,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({ title }) => {
   };
 
   return (
-    <div className="mb-4 mt-6">
+    <div className="mb-2 mt-4">
       <div className="relative inline-block group">
         {/* Decorative background block */}
         {/* 
@@ -37,7 +37,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({ title }) => {
             - pr-10: Increased right padding to ensure text doesn't hit the slope area.
         */}
         <div 
-            className="bg-black text-white inline-block pl-6 pr-10 py-1.5 font-bold tracking-wide text-sm relative z-10"
+            className="bg-black text-white inline-block pl-6 pr-10 py-1 font-bold tracking-wide text-sm relative z-10"
             style={blackBlockStyle}
         >
           {title || '\u00A0'}

@@ -67,10 +67,10 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ d
       switch (key) {
           case 'education':
               return (
-                <section key={key} className="break-inside-avoid mb-6">
+                <section key={key} className="break-inside-avoid mb-4">
                     <SectionHeader title={data.sections.education.title} />
                     {data.education.map((edu) => (
-                    <div key={edu.id} className="flex justify-between mb-3 items-baseline break-inside-avoid">
+                    <div key={edu.id} className="flex justify-between mb-2 items-baseline break-inside-avoid">
                         <div className="flex-1">
                         <div className="font-bold text-base text-black">{edu.school}</div>
                         <div className="text-gray-700">{edu.degree}</div>
@@ -85,11 +85,11 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ d
               );
           case 'work':
               return (
-                <section key={key} className="break-inside-avoid mb-6">
+                <section key={key} className="break-inside-avoid mb-4">
                     <SectionHeader title={data.sections.work.title} />
                     {data.work.map((job) => (
-                    <div key={job.id} className="mb-5 break-inside-avoid">
-                        <div className="flex justify-between items-baseline mb-2">
+                    <div key={job.id} className="mb-4 break-inside-avoid">
+                        <div className="flex justify-between items-baseline mb-1">
                         <div className="font-bold text-base text-black">
                             {job.company} {job.position && <span>- {job.position}</span>}
                         </div>
@@ -99,7 +99,7 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ d
                         </div>
                         </div>
                         <div 
-                            className="text-sm text-gray-800 text-justify [&>ul]:list-disc [&>ul]:list-outside [&>ul]:ml-4 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:list-outside [&>ol]:ml-4 [&>ol]:space-y-1 [&_li]:mb-0.5 [&_a]:text-black [&_a]:underline [&_a]:decoration-gray-500 [&_a]:underline-offset-2" 
+                            className="text-sm text-gray-800 text-justify [&>ul]:list-disc [&>ul]:list-outside [&>ul]:ml-4 [&>ul]:space-y-0.5 [&>ol]:list-decimal [&>ol]:list-outside [&>ol]:ml-4 [&>ol]:space-y-0.5 [&_li]:mb-0 [&_a]:text-black [&_a]:underline [&_a]:decoration-gray-500 [&_a]:underline-offset-2" 
                             dangerouslySetInnerHTML={{ __html: job.details }} 
                         />
                     </div>
@@ -108,11 +108,11 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ d
               );
           case 'projects':
               return (
-                <section key={key} className="break-inside-avoid mb-6">
+                <section key={key} className="break-inside-avoid mb-4">
                     <SectionHeader title={data.sections.projects.title} />
                     {data.projects.map((proj) => (
-                    <div key={proj.id} className="mb-5 break-inside-avoid">
-                        <div className="flex justify-between items-baseline mb-2">
+                    <div key={proj.id} className="mb-4 break-inside-avoid">
+                        <div className="flex justify-between items-baseline mb-1">
                         <div className="font-bold text-base text-black">
                             {proj.name} {proj.role && <span>- {proj.role}</span>}
                         </div>
@@ -122,7 +122,7 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ d
                         </div>
                         </div>
                         <div 
-                            className="text-sm text-gray-800 text-justify [&>ul]:list-disc [&>ul]:list-outside [&>ul]:ml-4 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:list-outside [&>ol]:ml-4 [&>ol]:space-y-1 [&_li]:mb-0.5 [&_a]:text-black [&_a]:underline [&_a]:decoration-gray-500 [&_a]:underline-offset-2" 
+                            className="text-sm text-gray-800 text-justify [&>ul]:list-disc [&>ul]:list-outside [&>ul]:ml-4 [&>ul]:space-y-0.5 [&>ol]:list-decimal [&>ol]:list-outside [&>ol]:ml-4 [&>ol]:space-y-0.5 [&_li]:mb-0 [&_a]:text-black [&_a]:underline [&_a]:decoration-gray-500 [&_a]:underline-offset-2" 
                             dangerouslySetInnerHTML={{ __html: proj.details }} 
                         />
                     </div>
@@ -131,9 +131,9 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ d
               );
           case 'others':
               return (
-                <section key={key} className="break-inside-avoid mb-6">
+                <section key={key} className="break-inside-avoid mb-4">
                     <SectionHeader title={data.sections.others.title} />
-                    <ul className="list-none space-y-1.5">
+                    <ul className="list-none space-y-1">
                     {data.others.map((item) => (
                         <li key={item.id} className="flex break-inside-avoid">
                             <span className="font-bold text-black min-w-[100px]">{item.label}：</span>
@@ -145,10 +145,10 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ d
               );
           case 'summary':
               return (
-                <section key={key} className="break-inside-avoid mb-6">
+                <section key={key} className="break-inside-avoid mb-4">
                     <SectionHeader title={data.sections.summary.title} />
                     <div 
-                            className="text-sm text-gray-800 text-justify [&>ul]:list-disc [&>ul]:list-outside [&>ul]:ml-4 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:list-outside [&>ol]:ml-4 [&>ol]:space-y-1 [&_li]:mb-0.5 [&_a]:text-black [&_a]:underline [&_a]:decoration-gray-500 [&_a]:underline-offset-2" 
+                            className="text-sm text-gray-800 text-justify [&>ul]:list-disc [&>ul]:list-outside [&>ul]:ml-4 [&>ul]:space-y-0.5 [&>ol]:list-decimal [&>ol]:list-outside [&>ol]:ml-4 [&>ol]:space-y-0.5 [&_li]:mb-0 [&_a]:text-black [&_a]:underline [&_a]:decoration-gray-500 [&_a]:underline-offset-2" 
                             dangerouslySetInnerHTML={{ __html: data.summary }} 
                         />
                 </section>
@@ -162,15 +162,15 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ d
     <div 
         ref={ref} 
         id="resume-preview" 
-        className={`a4-paper relative text-sm font-sans leading-relaxed text-gray-800 ${viewMode === 'pdf' ? 'shadow-2xl' : ''}`}
+        className={`a4-paper relative text-sm font-sans leading-normal text-gray-800 ${viewMode === 'pdf' ? 'shadow-2xl' : ''}`}
         style={viewMode === 'pdf' ? {
              minHeight: '297mm',
              backgroundImage: `linear-gradient(to bottom, white ${A4_HEIGHT_PX}px, #e5e7eb ${A4_HEIGHT_PX}px, #e5e7eb ${A4_HEIGHT_PX + PAGE_GAP_PX}px)`,
              backgroundSize: `100% ${A4_HEIGHT_PX + PAGE_GAP_PX}px`,
              backgroundColor: '#e5e7eb',
-             padding: '3rem' // Preview Padding
+             padding: '2rem' // Preview Padding Reduced
         } : {
-             padding: '3rem' // Image Export Padding
+             padding: '2rem' // Image Export Padding Reduced
         }}
     >
       <style>{`
@@ -181,7 +181,7 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ d
           }
           
           section {
-            margin-bottom: 2rem; 
+            margin-bottom: 1.5rem; 
             break-inside: avoid;
           }
           
@@ -199,19 +199,19 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ d
           .print-container {
             display: table;
             width: 100%;
-            padding-left: 3rem; 
-            padding-right: 3rem;
+            padding-left: 2rem; 
+            padding-right: 2rem;
             box-sizing: border-box;
           }
           
           .print-header-spacer {
             display: table-header-group;
-            height: 3rem; /* Explicit height */
+            height: 2rem; /* Explicit height */
           }
           
           .print-footer-spacer {
             display: table-footer-group;
-            height: 3rem; /* Explicit height */
+            height: 2rem; /* Explicit height */
           }
           
           .print-body {
@@ -227,7 +227,7 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ d
           }
           
           .spacer-content {
-             height: 3rem; 
+             height: 2rem; 
              visibility: hidden;
           }
         }
@@ -261,10 +261,10 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ d
             <div className="print-row">
                 <div className="print-cell">
                     {/* Content */}
-                    <header className="mb-8 break-inside-avoid">
-                        <h1 className="text-4xl font-extrabold text-black tracking-wider mb-2">{data.basics.name}</h1>
-                        <p className="text-gray-600 font-medium">{data.basics.contactInfo}</p>
-                        {data.basics.note && <p className="text-gray-500 text-sm mt-1">{data.basics.note}</p>}
+                    <header className="mb-6 break-inside-avoid">
+                        <h1 className="text-3xl font-extrabold text-black tracking-wider mb-1">{data.basics.name}</h1>
+                        <p className="text-gray-600 font-medium text-sm">{data.basics.contactInfo}</p>
+                        {data.basics.note && <p className="text-gray-500 text-xs mt-1">{data.basics.note}</p>}
                     </header>
 
                     {/* Render sections based on order */}
