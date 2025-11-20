@@ -1,5 +1,5 @@
 {
-  "name": "ResumeBuilder Pro",
-  "description": "A professional, modular resume builder replicating a specific high-contrast design with PDF and PNG export capabilities.",
+  "name": "OpenResume",
+  "description": "An open-source, professional resume builder with PDF and PNG export capabilities.",
   "requestFramePermissions": []
 }

@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ResumeBuilder Pro</title>
+  <title>OpenResume Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     // 禁用 Tailwind CDN 的生产环境警告（开发环境可以忽略）
@@ -29,22 +29,40 @@
     }
 
     @media print {
-      body * {
-        visibility: hidden;
-      }
-
-      #resume-preview,
-      #resume-preview * {
-        visibility: visible;
-      }
-
-      #resume-preview {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
+      @page {
+        /* 
+          核心技术点：
+          1. margin: 0 -> 自动触发浏览器隐藏页眉页脚（时间、URL）。
+          2. size: A4 portrait -> 明确告诉浏览器使用 A4 纵向纸张。
+          
+          注意：内容的视觉边距现在完全由组件内部的 CSS Table Spacer 控制 (3rem)。
+          用户无需手动调整打印对话框的边距设置。
+        */
         margin: 0;
-        box-shadow: none;
+        size: A4 portrait;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        background: white;
+      }
+
+      .a4-paper {
+        margin: 0 !important;
+        box-shadow: none !important;
+        width: 210mm !important;
+        min-height: 297mm !important;
+        overflow: visible !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+
+        /* 强制背景为白色 */
+        background-color: white !important;
+        background-image: none !important;
+
+        /* 移除所有 padding，因为垂直边距由 Table Spacer 接管，水平边距在组件 style 中定义 */
+        padding: 0 !important;
       }
     }
   </style>

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { ResumeData, EducationItem, WorkItem, ProjectItem, SectionItem, SectionKey } from '../types';
-import { ChevronDown, ChevronUp, Plus, Trash2, Eye, EyeOff, Edit3 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2, Eye, EyeOff } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { RichInput } from './RichInput';
 
 interface EditorProps {
   data: ResumeData;
@@ -43,55 +44,13 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
     const newList = list.map(item => item.id === id ? { ...item, [field]: value } : item);
     onChange({ ...data, [section]: newList });
   };
-
-  // Helper to handle Detail Bullet Points
-  const updateDetail = (
-    section: 'work' | 'projects',
-    itemId: string,
-    detailIndex: number,
-    value: string
-  ) => {
-    const list = data[section];
-    const newList = list.map(item => {
-      if (item.id === itemId) {
-        const newDetails = [...item.details];
-        newDetails[detailIndex] = value;
-        return { ...item, details: newDetails };
-      }
-      return item;
-    });
-    onChange({ ...data, [section]: newList });
-  };
-
-  const addDetail = (section: 'work' | 'projects', itemId: string) => {
-    const list = data[section];
-    const newList = list.map(item => {
-      if (item.id === itemId) {
-        return { ...item, details: [...item.details, "新描述..."] };
-      }
-      return item;
-    });
-    onChange({ ...data, [section]: newList });
-  };
-
-  const deleteDetail = (section: 'work' | 'projects', itemId: string, detailIndex: number) => {
-    const list = data[section];
-    const newList = list.map(item => {
-      if (item.id === itemId) {
-        const newDetails = item.details.filter((_, i) => i !== detailIndex);
-        return { ...item, details: newDetails };
-      }
-      return item;
-    });
-    onChange({ ...data, [section]: newList });
-  };
   
   const addItem = (section: keyof ResumeData) => {
       // Factory for new items
       let newItem: any = { id: uuidv4() };
       if(section === 'education') newItem = { ...newItem, school: 'New School', degree: 'Degree', startDate: '2023', endDate: '2024', location: 'City' };
-      if(section === 'work') newItem = { ...newItem, company: 'New Company', position: 'Role', startDate: '2023', endDate: 'Present', location: 'City', details: ['Did something cool'] };
-      if(section === 'projects') newItem = { ...newItem, name: 'New Project', role: 'Role', startDate: '2023', endDate: '2024', location: 'City', details: ['Project detail'] };
+      if(section === 'work') newItem = { ...newItem, company: 'New Company', position: 'Role', startDate: '2023', endDate: 'Present', location: 'City', details: '<ul><li>New Role Detail</li></ul>' };
+      if(section === 'projects') newItem = { ...newItem, name: 'New Project', role: 'Role', startDate: '2023', endDate: '2024', location: 'City', details: '<ul><li>Project Detail</li></ul>' };
       if(section === 'others' || section === 'summary') newItem = { ...newItem, label: 'Label', content: 'Content' };
 
       onChange({ ...data, [section]: [...(data[section] as any[]), newItem] });
@@ -172,18 +131,11 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
               </div>
               <Input label="地点" value={job.location} onChange={(e) => updateItem<WorkItem>('work', job.id, 'location', e.target.value)} />
             </div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">详细内容 (要点)</label>
-            {job.details.map((det, idx) => (
-                <div key={idx} className="flex gap-2 mb-1">
-                    <textarea 
-                        className="w-full text-sm border rounded p-1 min-h-[60px]" 
-                        value={det} 
-                        onChange={(e) => updateDetail('work', job.id, idx, e.target.value)}
-                    />
-                    <button onClick={() => deleteDetail('work', job.id, idx)} className="text-red-500 hover:bg-red-100 p-1 rounded h-fit"><Trash2 size={14} /></button>
-                </div>
-            ))}
-            <button onClick={() => addDetail('work', job.id)} className="text-xs text-blue-600 font-medium mt-1 flex items-center">+ 添加要点</button>
+            <RichInput 
+              label="详细内容 (要点)" 
+              value={job.details} 
+              onChange={(val) => updateItem<WorkItem>('work', job.id, 'details', val)} 
+            />
           </div>
         ))}
          <AddButton onClick={() => addItem('work')} label="添加工作经历" />
@@ -204,18 +156,11 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
               </div>
               <Input label="地点" value={proj.location} onChange={(e) => updateItem<ProjectItem>('projects', proj.id, 'location', e.target.value)} />
             </div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">项目详情</label>
-            {proj.details.map((det, idx) => (
-                <div key={idx} className="flex gap-2 mb-1">
-                    <textarea 
-                        className="w-full text-sm border rounded p-1 min-h-[60px]" 
-                        value={det} 
-                        onChange={(e) => updateDetail('projects', proj.id, idx, e.target.value)}
-                    />
-                    <button onClick={() => deleteDetail('projects', proj.id, idx)} className="text-red-500 hover:bg-red-100 p-1 rounded h-fit"><Trash2 size={14} /></button>
-                </div>
-            ))}
-            <button onClick={() => addDetail('projects', proj.id)} className="text-xs text-blue-600 font-medium mt-1 flex items-center">+ 添加要点</button>
+            <RichInput 
+              label="项目详情" 
+              value={proj.details} 
+              onChange={(val) => updateItem<ProjectItem>('projects', proj.id, 'details', val)} 
+            />
           </div>
         ))}
          <AddButton onClick={() => addItem('projects')} label="添加项目经历" />

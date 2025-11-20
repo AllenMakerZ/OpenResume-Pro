@@ -16,7 +16,7 @@ export interface WorkItem extends BaseItem {
   startDate: string;
   endDate: string;
   location: string;
-  details: string[]; // Bullet points
+  details: string; // HTML content
 }
 
 export interface ProjectItem extends BaseItem {
@@ -25,7 +25,7 @@ export interface ProjectItem extends BaseItem {
   startDate: string;
   endDate: string;
   location: string;
-  details: string[];
+  details: string; // HTML content
 }
 
 export interface SectionItem extends BaseItem {
