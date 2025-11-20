@@ -6,11 +6,12 @@ export const INITIAL_RESUME_DATA: ResumeData = {
     name: '李白',
     contactInfo: '13800138000 丨 example@email.com 丨 城市'
   },
+  sectionOrder: ['education', 'work', 'projects', 'others', 'summary'],
   sections: {
     education: { title: '教育经历', visible: true },
     work: { title: '工作与实习经历', visible: true },
     projects: { title: '项目经历', visible: true },
-    others: { title: '其他', visible: true },
+    others: { title: '技能与证书', visible: true },
     summary: { title: '个人总结', visible: true }
   },
   education: [

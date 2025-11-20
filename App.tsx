@@ -11,7 +11,15 @@ import jsPDF from 'jspdf';
 export default function App() {
   const [resumeData, setResumeData] = useState<ResumeData>(() => {
     const saved = localStorage.getItem('resumeData');
-    return saved ? JSON.parse(saved) : INITIAL_RESUME_DATA;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Migration: ensure sectionOrder exists
+      if (!parsed.sectionOrder) {
+        parsed.sectionOrder = ['education', 'work', 'projects', 'others', 'summary'];
+      }
+      return parsed;
+    }
+    return INITIAL_RESUME_DATA;
   });
 
   const previewRef = useRef<HTMLDivElement>(null);
