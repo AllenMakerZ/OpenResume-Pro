@@ -208,7 +208,7 @@ export default function App() {
             <div className="h-4 w-px bg-gray-200" />
 
             <div className="text-gray-500 text-xs font-medium whitespace-nowrap">
-              共 {totalPages} 页
+              共 {totalPages} 页 A4
             </div>
           </div>
 
