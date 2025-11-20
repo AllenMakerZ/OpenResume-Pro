@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ResumeData, EducationItem, WorkItem, ProjectItem, SectionItem, SectionKey } from '../types';
-import { ChevronDown, ChevronUp, Plus, Trash2, Eye, EyeOff, GripVertical } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2, Eye, EyeOff, GripVertical, ListOrdered, X } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { RichInput } from './RichInput';
 import {
@@ -53,8 +53,8 @@ const SectionHeaderControl = ({
   );
 };
 
-// Sortable Item Wrapper
-const SortableItem = ({ id, children }: { id: string; children: React.ReactNode }) => {
+// Sortable Item Wrapper for SECTIONS
+const SortableSectionItem = ({ id, children }: { id: string; children: React.ReactNode }) => {
     const {
         attributes,
         listeners,
@@ -73,16 +73,110 @@ const SortableItem = ({ id, children }: { id: string; children: React.ReactNode 
 
     return (
         <div ref={setNodeRef} style={style}>
-             {/* Pass listeners to children via cloneElement or context? 
-                 Here we assume children is SectionWrapper which accepts dragHandleProps
-              */}
              {React.cloneElement(children as React.ReactElement, { dragHandleProps: { ...attributes, ...listeners } })}
+        </div>
+    );
+};
+
+// Sortable Item Wrapper for INNER LIST Items
+const SortableRowItem = ({ id, children }: { id: string; children: React.ReactNode }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 100 : 'auto',
+        position: 'relative' as const,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} className="flex items-center gap-2 p-2 bg-gray-50 border rounded mb-2 group">
+            <div {...attributes} {...listeners} className="cursor-grab text-gray-400 hover:text-gray-700 p-1" onClick={e => e.stopPropagation()}>
+                <GripVertical size={14} />
+            </div>
+            <div className="flex-1 truncate text-sm font-medium text-gray-700">
+                {children}
+            </div>
+        </div>
+    );
+};
+
+// Inner List Sort Manager
+const SectionSortManager = ({ 
+    items, 
+    onReorder, 
+    onDelete,
+    renderLabel 
+}: { 
+    items: any[]; 
+    onReorder: (oldIndex: number, newIndex: number) => void; 
+    onDelete: (id: string) => void;
+    renderLabel: (item: any) => string;
+}) => {
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+          coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (over && active.id !== over.id) {
+            const oldIndex = items.findIndex(i => i.id === active.id);
+            const newIndex = items.findIndex(i => i.id === over.id);
+            onReorder(oldIndex, newIndex);
+        }
+    };
+
+    return (
+        <div className="bg-gray-100 rounded-lg p-3 mb-4 border-2 border-blue-100">
+             <div className="text-xs font-bold text-gray-500 mb-2 flex justify-between items-center">
+                <span>调整顺序 & 删除</span>
+                <span className="text-[10px] font-normal text-gray-400">拖拽左侧手柄排序</span>
+             </div>
+             <DndContext 
+                sensors={sensors} 
+                collisionDetection={closestCenter} 
+                onDragEnd={handleDragEnd}
+                // Important: stop propagation to prevent outer section drag
+                modifiers={[]}
+            >
+                <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+                    {items.map(item => (
+                        <div key={item.id} className="relative flex items-center">
+                             <div className="flex-1 min-w-0">
+                                <SortableRowItem id={item.id}>
+                                    {renderLabel(item) || <span className="text-gray-400 italic">未命名项目</span>}
+                                </SortableRowItem>
+                             </div>
+                             <button 
+                                onClick={() => onDelete(item.id)} 
+                                className="ml-2 p-2 text-gray-400 hover:text-red-500 hover:bg-white rounded transition-colors"
+                                title="删除此项"
+                             >
+                                <Trash2 size={16} />
+                             </button>
+                        </div>
+                    ))}
+                </SortableContext>
+             </DndContext>
+             {items.length === 0 && <div className="text-xs text-gray-400 text-center py-2">暂无项目</div>}
         </div>
     );
 };
 
 export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
   const [openSection, setOpenSection] = useState<string | null>('basics');
+  const [sortingSection, setSortingSection] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -91,7 +185,7 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
     })
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleSectionDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     
     if (over && active.id !== over.id) {
@@ -107,6 +201,14 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
 
   const toggleSection = (section: string) => {
     setOpenSection(openSection === section ? null : section);
+  };
+
+  const toggleSorting = (section: string) => {
+      setSortingSection(sortingSection === section ? null : section);
+      // Ensure section is open when sorting
+      if (sortingSection !== section && openSection !== section) {
+          setOpenSection(section);
+      }
   };
 
   const updateBasics = (field: keyof typeof data.basics, value: string) => {
@@ -153,6 +255,11 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
       onChange({ ...data, [section]: list.filter(i => i.id !== id) });
   };
 
+  const reorderItems = (section: keyof ResumeData, oldIndex: number, newIndex: number) => {
+      const list = data[section] as any[];
+      onChange({ ...data, [section]: arrayMove(list, oldIndex, newIndex) });
+  };
+
   // Section Management
   const removeSection = (key: SectionKey) => {
       if (window.confirm(`确定要移除"${data.sections[key].title}"模块吗？(数据会保留，可随时添加回来)`)) {
@@ -172,6 +279,8 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
   };
 
   const renderSectionContent = (key: SectionKey) => {
+      const isSorting = sortingSection === key;
+
       switch(key) {
           case 'education':
               return (
@@ -180,9 +289,19 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
                         title={data.sections.education.title}
                         onUpdateTitle={(val) => updateSectionConfig('education', 'title', val)}
                     />
+                    
+                    {isSorting && (
+                        <SectionSortManager 
+                            items={data.education}
+                            onReorder={(oldIdx, newIdx) => reorderItems('education', oldIdx, newIdx)}
+                            onDelete={(id) => deleteItem('education', id)}
+                            renderLabel={(item: EducationItem) => item.school}
+                        />
+                    )}
+
                     {data.education.map((edu) => (
                     <div key={edu.id} className="mb-6 p-3 bg-gray-50 rounded border relative group">
-                        <DeleteButton onClick={() => deleteItem('education', edu.id)} />
+                        {/* Note: Delete button removed from here, moved to Sort Manager */}
                         <div className="grid grid-cols-1 gap-2">
                         <Input label="学校" value={edu.school} onChange={(e) => updateItem<EducationItem>('education', edu.id, 'school', e.target.value)} />
                         <Input label="学位" value={edu.degree} onChange={(e) => updateItem<EducationItem>('education', edu.id, 'degree', e.target.value)} />
@@ -204,9 +323,18 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
                             title={data.sections.work.title}
                             onUpdateTitle={(val) => updateSectionConfig('work', 'title', val)}
                         />
+
+                        {isSorting && (
+                            <SectionSortManager 
+                                items={data.work}
+                                onReorder={(oldIdx, newIdx) => reorderItems('work', oldIdx, newIdx)}
+                                onDelete={(id) => deleteItem('work', id)}
+                                renderLabel={(item: WorkItem) => item.company}
+                            />
+                        )}
+
                         {data.work.map((job) => (
                         <div key={job.id} className="mb-6 p-3 bg-gray-50 rounded border relative group">
-                            <DeleteButton onClick={() => deleteItem('work', job.id)} />
                             <div className="grid grid-cols-1 gap-2 mb-2">
                             <Input label="公司" value={job.company} onChange={(e) => updateItem<WorkItem>('work', job.id, 'company', e.target.value)} />
                             <Input label="职位 (可选)" value={job.position} onChange={(e) => updateItem<WorkItem>('work', job.id, 'position', e.target.value)} />
@@ -233,9 +361,18 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
                             title={data.sections.projects.title}
                             onUpdateTitle={(val) => updateSectionConfig('projects', 'title', val)}
                         />
+
+                        {isSorting && (
+                            <SectionSortManager 
+                                items={data.projects}
+                                onReorder={(oldIdx, newIdx) => reorderItems('projects', oldIdx, newIdx)}
+                                onDelete={(id) => deleteItem('projects', id)}
+                                renderLabel={(item: ProjectItem) => item.name}
+                            />
+                        )}
+
                         {data.projects.map((proj) => (
                         <div key={proj.id} className="mb-6 p-3 bg-gray-50 rounded border relative group">
-                            <DeleteButton onClick={() => deleteItem('projects', proj.id)} />
                             <div className="grid grid-cols-1 gap-2 mb-2">
                             <Input label="项目名称" value={proj.name} onChange={(e) => updateItem<ProjectItem>('projects', proj.id, 'name', e.target.value)} />
                             <Input label="角色" value={proj.role} onChange={(e) => updateItem<ProjectItem>('projects', proj.id, 'role', e.target.value)} />
@@ -262,13 +399,26 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
                             title={data.sections.others.title}
                             onUpdateTitle={(val) => updateSectionConfig('others', 'title', val)}
                         />
+
+                        {isSorting && (
+                            <SectionSortManager 
+                                items={data.others}
+                                onReorder={(oldIdx, newIdx) => reorderItems('others', oldIdx, newIdx)}
+                                onDelete={(id) => deleteItem('others', id)}
+                                renderLabel={(item: SectionItem) => item.label}
+                            />
+                        )}
+
                         {data.others.map((item) => (
                             <div key={item.id} className="mb-2 p-2 bg-gray-50 rounded border relative flex gap-2 items-start">
                                 <div className="flex-1 space-y-2">
                                     <Input label="标签 (如: 技能)" value={item.label} onChange={(e) => updateItem<SectionItem>('others', item.id, 'label', e.target.value)} />
                                     <textarea className="w-full border rounded p-1 text-sm" rows={2} value={item.content} onChange={(e) => updateItem<SectionItem>('others', item.id, 'content', e.target.value)} />
                                 </div>
-                                <button onClick={() => deleteItem('others', item.id)} className="text-red-500 mt-6"><Trash2 size={16} /></button>
+                                {/* Delete is available in Sort Manager, but "Others" are small so maybe keep it here too? 
+                                    Requirements said "internal only focus content", let's stick to rule and remove it from here to encourage using sort manager 
+                                */}
+                                {/* <button onClick={() => deleteItem('others', item.id)} className="text-red-500 mt-6"><Trash2 size={16} /></button> */}
                             </div>
                         ))}
                         <AddButton onClick={() => addItem('others')} label="添加其他项" />
@@ -310,7 +460,7 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
         <DndContext 
             sensors={sensors}
             collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
+            onDragEnd={handleSectionDragEnd}
         >
             <SortableContext 
                 items={data.sectionOrder}
@@ -318,7 +468,7 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
             >
                 <div className="space-y-3">
                     {data.sectionOrder.map((key) => (
-                        <SortableItem key={key} id={key}>
+                        <SortableSectionItem key={key} id={key}>
                             <SectionWrapper 
                                 title={data.sections[key].title}
                                 isOpen={openSection === key}
@@ -326,10 +476,14 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
                                 isVisible={data.sections[key].visible}
                                 onToggleVisibility={() => updateSectionConfig(key, 'visible', !data.sections[key].visible)}
                                 onDelete={() => removeSection(key)}
+                                // Sort Props
+                                isSorting={sortingSection === key}
+                                onToggleSort={() => toggleSorting(key)}
+                                showSortButton={key !== 'summary'} // Summary doesn't need sorting
                             >
                                 {renderSectionContent(key)}
                             </SectionWrapper>
-                        </SortableItem>
+                        </SortableSectionItem>
                     ))}
                 </div>
             </SortableContext>
@@ -369,7 +523,22 @@ const SectionWrapper: React.FC<{
     onToggleVisibility?: () => void;
     onDelete?: () => void;
     dragHandleProps?: any;
-}> = ({ title, isOpen, onToggle, children, isVisible, onToggleVisibility, onDelete, dragHandleProps }) => (
+    isSorting?: boolean;
+    onToggleSort?: () => void;
+    showSortButton?: boolean;
+}> = ({ 
+    title, 
+    isOpen, 
+    onToggle, 
+    children, 
+    isVisible, 
+    onToggleVisibility, 
+    onDelete, 
+    dragHandleProps,
+    isSorting,
+    onToggleSort,
+    showSortButton
+}) => (
     <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
         <div 
             className="w-full bg-gray-100 p-3 flex justify-between items-center font-semibold text-sm hover:bg-gray-200 transition-colors cursor-pointer group select-none" 
@@ -390,6 +559,17 @@ const SectionWrapper: React.FC<{
             </div>
            
             <div className="flex items-center gap-1">
+                
+                {showSortButton && onToggleSort && (
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onToggleSort(); }}
+                        className={`p-1.5 rounded hover:bg-blue-100 hover:text-blue-600 transition-colors mr-1 ${isSorting ? 'text-blue-600 bg-blue-50 ring-1 ring-blue-200' : 'text-gray-400'}`}
+                        title={isSorting ? "关闭排序" : "调整内部顺序"}
+                    >
+                        {isSorting ? <X size={16} /> : <ListOrdered size={16} />}
+                    </button>
+                )}
+
                 {onToggleVisibility && (
                     <button 
                         onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }}
@@ -424,12 +604,9 @@ const Input: React.FC<{ label: string; value: string; onChange: (e: React.Change
     </div>
 );
 
-const DeleteButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
-    <button onClick={onClick} className="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors z-10 bg-white/80 p-1 rounded">
-        <Trash2 size={16} />
-    </button>
-);
-
+// DeleteButton removed from global use, or rather redefined locally if needed
+// But we are using it inside sorting manager now.
+// We'll keep AddButton
 const AddButton: React.FC<{ onClick: () => void; label: string }> = ({ onClick, label }) => (
     <button onClick={onClick} className="w-full py-2 mt-2 border-2 border-dashed border-gray-300 rounded text-gray-500 hover:border-black hover:text-black transition-all text-sm flex items-center justify-center gap-2">
         <Plus size={16} /> {label}
