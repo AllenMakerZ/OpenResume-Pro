@@ -1,5 +1,5 @@
 import React, { forwardRef, useLayoutEffect } from 'react';
-import { ResumeData, SectionKey, LayoutSettings } from '../types';
+import { ResumeData, SectionKey, LayoutSettings, BuiltinSectionKey } from '../types';
 import { SectionHeader } from './SectionHeader';
 
 interface ResumePreviewProps {
@@ -12,6 +12,10 @@ interface ResumePreviewProps {
 const A4_HEIGHT_PX = 1123;
 // Gap between pages in PDF preview mode
 const PAGE_GAP_PX = 20;
+
+const isBuiltin = (key: string): key is BuiltinSectionKey => {
+  return ['education', 'work', 'projects', 'others', 'summary'].includes(key);
+};
 
 export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ data, viewMode, layoutSettings }, ref) => {
 
@@ -77,102 +81,116 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ d
   }, [data, viewMode, ref, layoutSettings]);
 
   const renderSection = (key: SectionKey) => {
-      if (!data.sections[key].visible) return null;
+      if (isBuiltin(key)) {
+          if (!data.sections[key].visible) return null;
 
-      switch (key) {
-          case 'education':
-              return (
-                <section key={key} className="break-inside-avoid mb-4">
-                    <SectionHeader title={data.sections.education.title} />
-                    {data.education.map((edu) => (
-                    <div key={edu.id} className="flex justify-between mb-2 items-baseline break-inside-avoid">
-                        <div className="flex-1">
-                        <div className="font-bold text-black" style={{ fontSize: headerSize }}>{edu.school}</div>
-                        <div className="text-gray-700" style={{ fontSize: fontSize }}>{edu.degree}</div>
+          switch (key) {
+              case 'education':
+                  return (
+                    <section key={key} className="break-inside-avoid mb-4">
+                        <SectionHeader title={data.sections.education.title} />
+                        {data.education.map((edu) => (
+                        <div key={edu.id} className="flex justify-between mb-2 items-baseline break-inside-avoid">
+                            <div className="flex-1">
+                            <div className="font-bold text-black" style={{ fontSize: headerSize }}>{edu.school}</div>
+                            <div className="text-gray-700" style={{ fontSize: fontSize }}>{edu.degree}</div>
+                            </div>
+                            <div className="text-right min-w-[180px]">
+                            <div className="font-medium text-black" style={{ fontSize: fontSize }}>{edu.startDate} - {edu.endDate}</div>
+                            <div className="text-gray-600" style={{ fontSize: fontSize }}>{edu.location}</div>
+                            </div>
                         </div>
-                        <div className="text-right min-w-[180px]">
-                        <div className="font-medium text-black" style={{ fontSize: fontSize }}>{edu.startDate} - {edu.endDate}</div>
-                        <div className="text-gray-600" style={{ fontSize: fontSize }}>{edu.location}</div>
+                        ))}
+                    </section>
+                  );
+              case 'work':
+                  return (
+                    <section key={key} className="break-inside-avoid mb-4">
+                        <SectionHeader title={data.sections.work.title} />
+                        {data.work.map((job) => (
+                        <div key={job.id} className="mb-4 break-inside-avoid">
+                            <div className="flex justify-between items-baseline mb-1">
+                            <div className="font-bold text-black" style={{ fontSize: headerSize }}>
+                                {job.company} {job.position && <span>- {job.position}</span>}
+                            </div>
+                            <div className="text-right min-w-[180px]">
+                                <div className="font-medium text-black" style={{ fontSize: fontSize }}>{job.startDate} - {job.endDate}</div>
+                                <div className="text-gray-600" style={{ fontSize: fontSize }}>{job.location}</div>
+                            </div>
+                            </div>
+                            <div 
+                                className="text-gray-800 text-justify [&>ul]:list-disc [&>ul]:list-outside [&>ul]:ml-4 [&>ul]:space-y-0.5 [&>ol]:list-decimal [&>ol]:list-outside [&>ol]:ml-4 [&>ol]:space-y-0.5 [&_li]:mb-0 [&_a]:text-black [&_a]:underline [&_a]:decoration-gray-500 [&_a]:underline-offset-2" 
+                                style={{ fontSize: fontSize, lineHeight: lineHeight }}
+                                dangerouslySetInnerHTML={{ __html: job.details }} 
+                            />
                         </div>
-                    </div>
-                    ))}
-                </section>
-              );
-          case 'work':
-              return (
-                <section key={key} className="break-inside-avoid mb-4">
-                    <SectionHeader title={data.sections.work.title} />
-                    {data.work.map((job) => (
-                    <div key={job.id} className="mb-4 break-inside-avoid">
-                        <div className="flex justify-between items-baseline mb-1">
-                        <div className="font-bold text-black" style={{ fontSize: headerSize }}>
-                            {job.company} {job.position && <span>- {job.position}</span>}
+                        ))}
+                    </section>
+                  );
+              case 'projects':
+                  return (
+                    <section key={key} className="break-inside-avoid mb-4">
+                        <SectionHeader title={data.sections.projects.title} />
+                        {data.projects.map((proj) => (
+                        <div key={proj.id} className="mb-4 break-inside-avoid">
+                            <div className="flex justify-between items-baseline mb-1">
+                            <div className="font-bold text-black" style={{ fontSize: headerSize }}>
+                                {proj.name} {proj.role && <span>- {proj.role}</span>}
+                            </div>
+                            <div className="text-right min-w-[180px]">
+                                <div className="font-medium text-black" style={{ fontSize: fontSize }}>{proj.startDate} - {proj.endDate}</div>
+                                <div className="text-gray-600" style={{ fontSize: fontSize }}>{proj.location}</div>
+                            </div>
+                            </div>
+                            <div 
+                                className="text-gray-800 text-justify [&>ul]:list-disc [&>ul]:list-outside [&>ul]:ml-4 [&>ul]:space-y-0.5 [&>ol]:list-decimal [&>ol]:list-outside [&>ol]:ml-4 [&>ol]:space-y-0.5 [&_li]:mb-0 [&_a]:text-black [&_a]:underline [&_a]:decoration-gray-500 [&_a]:underline-offset-2" 
+                                style={{ fontSize: fontSize, lineHeight: lineHeight }}
+                                dangerouslySetInnerHTML={{ __html: proj.details }} 
+                            />
                         </div>
-                        <div className="text-right min-w-[180px]">
-                            <div className="font-medium text-black" style={{ fontSize: fontSize }}>{job.startDate} - {job.endDate}</div>
-                            <div className="text-gray-600" style={{ fontSize: fontSize }}>{job.location}</div>
-                        </div>
-                        </div>
+                        ))}
+                    </section>
+                  );
+              case 'others':
+                  return (
+                    <section key={key} className="break-inside-avoid mb-4">
+                        <SectionHeader title={data.sections.others.title} />
                         <div 
-                            className="text-gray-800 text-justify [&>ul]:list-disc [&>ul]:list-outside [&>ul]:ml-4 [&>ul]:space-y-0.5 [&>ol]:list-decimal [&>ol]:list-outside [&>ol]:ml-4 [&>ol]:space-y-0.5 [&_li]:mb-0 [&_a]:text-black [&_a]:underline [&_a]:decoration-gray-500 [&_a]:underline-offset-2" 
-                            style={{ fontSize: fontSize, lineHeight: lineHeight }}
-                            dangerouslySetInnerHTML={{ __html: job.details }} 
-                        />
-                    </div>
-                    ))}
-                </section>
-              );
-          case 'projects':
-              return (
-                <section key={key} className="break-inside-avoid mb-4">
-                    <SectionHeader title={data.sections.projects.title} />
-                    {data.projects.map((proj) => (
-                    <div key={proj.id} className="mb-4 break-inside-avoid">
-                        <div className="flex justify-between items-baseline mb-1">
-                        <div className="font-bold text-black" style={{ fontSize: headerSize }}>
-                            {proj.name} {proj.role && <span>- {proj.role}</span>}
-                        </div>
-                        <div className="text-right min-w-[180px]">
-                            <div className="font-medium text-black" style={{ fontSize: fontSize }}>{proj.startDate} - {proj.endDate}</div>
-                            <div className="text-gray-600" style={{ fontSize: fontSize }}>{proj.location}</div>
-                        </div>
-                        </div>
+                                className="text-gray-800 text-justify [&>ul]:list-disc [&>ul]:list-outside [&>ul]:ml-4 [&>ul]:space-y-0.5 [&>ol]:list-decimal [&>ol]:list-outside [&>ol]:ml-4 [&>ol]:space-y-0.5 [&_li]:mb-0 [&_a]:text-black [&_a]:underline [&_a]:decoration-gray-500 [&_a]:underline-offset-2" 
+                                style={{ fontSize: fontSize, lineHeight: lineHeight }}
+                                dangerouslySetInnerHTML={{ __html: data.others }} 
+                            />
+                    </section>
+                  );
+              case 'summary':
+                  return (
+                    <section key={key} className="break-inside-avoid mb-4">
+                        <SectionHeader title={data.sections.summary.title} />
                         <div 
-                            className="text-gray-800 text-justify [&>ul]:list-disc [&>ul]:list-outside [&>ul]:ml-4 [&>ul]:space-y-0.5 [&>ol]:list-decimal [&>ol]:list-outside [&>ol]:ml-4 [&>ol]:space-y-0.5 [&_li]:mb-0 [&_a]:text-black [&_a]:underline [&_a]:decoration-gray-500 [&_a]:underline-offset-2" 
-                            style={{ fontSize: fontSize, lineHeight: lineHeight }}
-                            dangerouslySetInnerHTML={{ __html: proj.details }} 
-                        />
-                    </div>
-                    ))}
-                </section>
-              );
-          case 'others':
-              return (
-                <section key={key} className="break-inside-avoid mb-4">
-                    <SectionHeader title={data.sections.others.title} />
-                    <ul className="list-none space-y-1">
-                    {data.others.map((item) => (
-                        <li key={item.id} className="flex break-inside-avoid">
-                            <span className="font-bold text-black min-w-[100px]" style={{ fontSize: fontSize }}>{item.label}：</span>
-                            <span className="text-gray-800" style={{ fontSize: fontSize, lineHeight: lineHeight }}>{item.content}</span>
-                        </li>
-                    ))}
-                    </ul>
-                </section>
-              );
-          case 'summary':
-              return (
-                <section key={key} className="break-inside-avoid mb-4">
-                    <SectionHeader title={data.sections.summary.title} />
-                    <div 
-                            className="text-gray-800 text-justify [&>ul]:list-disc [&>ul]:list-outside [&>ul]:ml-4 [&>ul]:space-y-0.5 [&>ol]:list-decimal [&>ol]:list-outside [&>ol]:ml-4 [&>ol]:space-y-0.5 [&_li]:mb-0 [&_a]:text-black [&_a]:underline [&_a]:decoration-gray-500 [&_a]:underline-offset-2" 
-                            style={{ fontSize: fontSize, lineHeight: lineHeight }}
-                            dangerouslySetInnerHTML={{ __html: data.summary }} 
-                        />
-                </section>
-              );
-          default:
-              return null;
+                                className="text-gray-800 text-justify [&>ul]:list-disc [&>ul]:list-outside [&>ul]:ml-4 [&>ul]:space-y-0.5 [&>ol]:list-decimal [&>ol]:list-outside [&>ol]:ml-4 [&>ol]:space-y-0.5 [&_li]:mb-0 [&_a]:text-black [&_a]:underline [&_a]:decoration-gray-500 [&_a]:underline-offset-2" 
+                                style={{ fontSize: fontSize, lineHeight: lineHeight }}
+                                dangerouslySetInnerHTML={{ __html: data.summary }} 
+                            />
+                    </section>
+                  );
+              default:
+                  return null;
+          }
+      } else {
+          // Custom Section
+          const customSec = data.customSections.find(s => s.id === key);
+          if (!customSec || !customSec.visible) return null;
+
+          return (
+            <section key={key} className="break-inside-avoid mb-4">
+                <SectionHeader title={customSec.title} />
+                <div 
+                        className="text-gray-800 text-justify [&>ul]:list-disc [&>ul]:list-outside [&>ul]:ml-4 [&>ul]:space-y-0.5 [&>ol]:list-decimal [&>ol]:list-outside [&>ol]:ml-4 [&>ol]:space-y-0.5 [&_li]:mb-0 [&_a]:text-black [&_a]:underline [&_a]:decoration-gray-500 [&_a]:underline-offset-2" 
+                        style={{ fontSize: fontSize, lineHeight: lineHeight }}
+                        dangerouslySetInnerHTML={{ __html: customSec.content }} 
+                    />
+            </section>
+          );
       }
   }
 

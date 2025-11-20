@@ -33,10 +33,17 @@ export interface SectionItem extends BaseItem {
   content: string; // For simple text entries like "Skills"
 }
 
-export type SectionKey = 'education' | 'work' | 'projects' | 'others' | 'summary';
+export type BuiltinSectionKey = 'education' | 'work' | 'projects' | 'others' | 'summary';
+export type SectionKey = BuiltinSectionKey | string;
 
 export interface SectionSettings {
   title: string;
+  visible: boolean;
+}
+
+export interface CustomSection extends BaseItem {
+  title: string;
+  content: string; // HTML content
   visible: boolean;
 }
 
@@ -47,11 +54,12 @@ export interface ResumeData {
     note?: string; // Additional note/tagline
   };
   sectionOrder: SectionKey[];
-  sections: Record<SectionKey, SectionSettings>; // Configuration for section titles and visibility
+  sections: Record<BuiltinSectionKey, SectionSettings>; // Configuration for builtin section titles and visibility
+  customSections: CustomSection[]; // Dynamic custom sections
   education: EducationItem[];
   work: WorkItem[];
   projects: ProjectItem[];
-  others: SectionItem[]; // Skills, Awards, etc.
+  others: string; // HTML content for Skills, Awards, etc. (Refactored from SectionItem[])
   summary: string; // HTML content for Personal summary
 }
 

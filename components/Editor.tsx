@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ResumeData, EducationItem, WorkItem, ProjectItem, SectionItem, SectionKey } from '../types';
-import { ChevronDown, ChevronUp, Plus, Trash2, Eye, EyeOff, GripVertical, ListOrdered, X } from 'lucide-react';
+import { ResumeData, EducationItem, WorkItem, ProjectItem, SectionItem, SectionKey, BuiltinSectionKey, CustomSection } from '../types';
+import { ChevronDown, ChevronUp, Plus, Trash2, Eye, EyeOff, GripVertical, ListOrdered, X, Settings, Check } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { RichInput } from './RichInput';
 import {
@@ -46,7 +46,7 @@ const SectionHeaderControl = ({
 };
 
 // Sortable Item Wrapper for SECTIONS
-const SortableSectionItem = ({ id, children }: { id: string; children: React.ReactNode }) => {
+const SortableSectionItem = ({ id, children, isDragDisabled }: { id: string; children: React.ReactNode; isDragDisabled?: boolean }) => {
     const {
         attributes,
         listeners,
@@ -54,7 +54,7 @@ const SortableSectionItem = ({ id, children }: { id: string; children: React.Rea
         transform,
         transition,
         isDragging
-    } = useSortable({ id });
+    } = useSortable({ id, disabled: isDragDisabled });
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -65,7 +65,9 @@ const SortableSectionItem = ({ id, children }: { id: string; children: React.Rea
 
     return (
         <div ref={setNodeRef} style={style}>
-             {React.cloneElement(children as React.ReactElement, { dragHandleProps: { ...attributes, ...listeners } })}
+             {React.cloneElement(children as React.ReactElement, { 
+                 dragHandleProps: isDragDisabled ? undefined : { ...attributes, ...listeners } 
+             })}
         </div>
     );
 };
@@ -139,7 +141,6 @@ const SectionSortManager = ({
                 sensors={sensors} 
                 collisionDetection={closestCenter} 
                 onDragEnd={handleDragEnd}
-                // Important: stop propagation to prevent outer section drag
                 modifiers={[]}
             >
                 <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
@@ -166,9 +167,15 @@ const SectionSortManager = ({
     );
 };
 
+const isBuiltin = (key: string): key is BuiltinSectionKey => {
+    return ['education', 'work', 'projects', 'others', 'summary'].includes(key);
+};
+
 export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
   const [openSection, setOpenSection] = useState<string | null>('basics');
   const [sortingSection, setSortingSection] = useState<string | null>(null);
+  const [isManaging, setIsManaging] = useState(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -181,8 +188,8 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
     const { active, over } = event;
     
     if (over && active.id !== over.id) {
-      const oldIndex = data.sectionOrder.indexOf(active.id as SectionKey);
-      const newIndex = data.sectionOrder.indexOf(over.id as SectionKey);
+      const oldIndex = data.sectionOrder.indexOf(active.id as string);
+      const newIndex = data.sectionOrder.indexOf(over.id as string);
       
       onChange({
         ...data,
@@ -192,12 +199,12 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
   };
 
   const toggleSection = (section: string) => {
+    if (isManaging) return; // Disable toggling in management mode
     setOpenSection(openSection === section ? null : section);
   };
 
   const toggleSorting = (section: string) => {
       setSortingSection(sortingSection === section ? null : section);
-      // Ensure section is open when sorting
       if (sortingSection !== section && openSection !== section) {
           setOpenSection(section);
       }
@@ -210,7 +217,8 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
     });
   };
 
-  const updateSectionConfig = (key: SectionKey, field: 'title' | 'visible', value: any) => {
+  // Builtin Section Config
+  const updateBuiltinSectionConfig = (key: BuiltinSectionKey, field: 'title' | 'visible', value: any) => {
     onChange({
         ...data,
         sections: {
@@ -218,6 +226,14 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
             [key]: { ...data.sections[key], [field]: value }
         }
     });
+  };
+
+  // Custom Section Update
+  const updateCustomSection = (id: string, field: keyof CustomSection, value: any) => {
+      const newCustomSections = data.customSections.map(s => 
+          s.id === id ? { ...s, [field]: value } : s
+      );
+      onChange({ ...data, customSections: newCustomSections });
   };
 
   // Generic Helper to update array items
@@ -237,7 +253,6 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
       if(section === 'education') newItem = { ...newItem, school: 'New School', degree: 'Degree', startDate: '2023', endDate: '2024', location: 'City' };
       if(section === 'work') newItem = { ...newItem, company: 'New Company', position: 'Role', startDate: '2023', endDate: 'Present', location: 'City', details: '<ul><li>New Role Detail</li></ul>' };
       if(section === 'projects') newItem = { ...newItem, name: 'New Project', role: 'Role', startDate: '2023', endDate: '2024', location: 'City', details: '<ul><li>Project Detail</li></ul>' };
-      if(section === 'others') newItem = { ...newItem, label: 'Label', content: 'Content' };
 
       onChange({ ...data, [section]: [...(data[section] as any[]), newItem] });
   };
@@ -252,50 +267,117 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
       onChange({ ...data, [section]: arrayMove(list, oldIndex, newIndex) });
   };
 
-  const renderSectionContent = (key: SectionKey) => {
-      const isSorting = sortingSection === key;
+  // ADD MODULE LOGIC
+  const handleAddModule = (type: 'custom' | BuiltinSectionKey) => {
+    if (type === 'custom') {
+        const newId = `custom-${uuidv4()}`;
+        const newSection: CustomSection = {
+            id: newId,
+            title: '自定义模块',
+            content: '<ul><li>在这里输入内容...</li></ul>',
+            visible: true
+        };
+        onChange({
+            ...data,
+            customSections: [...data.customSections, newSection],
+            sectionOrder: [...data.sectionOrder, newId]
+        });
+        setOpenSection(newId);
+    } else {
+        // Add built-in back
+        if (!data.sectionOrder.includes(type)) {
+             onChange({
+                ...data,
+                sectionOrder: [...data.sectionOrder, type]
+            });
+            setOpenSection(type);
+        }
+    }
+    setShowAddMenu(false);
+    // Optional: Exit management mode after adding? 
+    // setIsManaging(false);
+  };
 
-      switch(key) {
-          case 'education':
-              return (
-                <>
-                    <SectionHeaderControl 
-                        title={data.sections.education.title}
-                        onUpdateTitle={(val) => updateSectionConfig('education', 'title', val)}
-                    />
-                    
-                    {isSorting && (
-                        <SectionSortManager 
-                            items={data.education}
-                            onReorder={(oldIdx, newIdx) => reorderItems('education', oldIdx, newIdx)}
-                            onDelete={(id) => deleteItem('education', id)}
-                            renderLabel={(item: EducationItem) => item.school}
+  // DELETE MODULE LOGIC
+  const handleDeleteModule = (key: string) => {
+    if (window.confirm('删除模块不可恢复，是否删除？')) {
+        if (isBuiltin(key)) {
+            // Remove from order only
+            onChange({
+                ...data,
+                sectionOrder: data.sectionOrder.filter(k => k !== key)
+            });
+        } else {
+             // Remove custom section completely
+             onChange({
+                ...data,
+                customSections: data.customSections.filter(s => s.id !== key),
+                sectionOrder: data.sectionOrder.filter(sid => sid !== key)
+            });
+        }
+    }
+  };
+
+  // Get missing built-in modules
+  const availableBuiltins = ['education', 'work', 'projects', 'others', 'summary'].filter(
+      key => !data.sectionOrder.includes(key as SectionKey)
+  ) as BuiltinSectionKey[];
+
+
+  const renderSectionContent = (key: string) => {
+      if (isBuiltin(key)) {
+        const isSorting = sortingSection === key;
+        switch(key) {
+            case 'education':
+                return (
+                    <>
+                        <SectionHeaderControl 
+                            title={data.sections.education.title}
+                            onUpdateTitle={(val) => updateBuiltinSectionConfig('education', 'title', val)}
                         />
-                    )}
+                        
+                        {isSorting && (
+                            <SectionSortManager 
+                                items={data.education}
+                                onReorder={(oldIdx, newIdx) => reorderItems('education', oldIdx, newIdx)}
+                                onDelete={(id) => deleteItem('education', id)}
+                                renderLabel={(item: EducationItem) => item.school}
+                            />
+                        )}
 
-                    {data.education.map((edu) => (
-                    <div key={edu.id} className="mb-6 p-3 bg-gray-50 rounded border relative group">
-                        {/* Note: Delete button removed from here, moved to Sort Manager */}
-                        <div className="grid grid-cols-1 gap-2">
-                        <Input label="学校" value={edu.school} onChange={(e) => updateItem<EducationItem>('education', edu.id, 'school', e.target.value)} />
-                        <Input label="学位" value={edu.degree} onChange={(e) => updateItem<EducationItem>('education', edu.id, 'degree', e.target.value)} />
-                        <div className="grid grid-cols-2 gap-2">
-                            <Input label="开始时间" value={edu.startDate} onChange={(e) => updateItem<EducationItem>('education', edu.id, 'startDate', e.target.value)} />
-                            <Input label="结束时间" value={edu.endDate} onChange={(e) => updateItem<EducationItem>('education', edu.id, 'endDate', e.target.value)} />
+                        {data.education.map((edu) => (
+                        <div key={edu.id} className="mb-6 p-3 bg-gray-50 rounded border relative group">
+                            <div className="grid grid-cols-1 gap-2">
+                                <div className="flex gap-2 items-start">
+                                    <div className="flex-1">
+                                        <Input label="学校" value={edu.school} onChange={(e) => updateItem<EducationItem>('education', edu.id, 'school', e.target.value)} />
+                                    </div>
+                                    <button 
+                                        onClick={() => deleteItem('education', edu.id)}
+                                        className="mt-5 p-1.5 text-gray-400 hover:text-red-500 hover:bg-white rounded transition-colors"
+                                        title="删除"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            <Input label="学位" value={edu.degree} onChange={(e) => updateItem<EducationItem>('education', edu.id, 'degree', e.target.value)} />
+                            <div className="grid grid-cols-2 gap-2">
+                                <Input label="开始时间" value={edu.startDate} onChange={(e) => updateItem<EducationItem>('education', edu.id, 'startDate', e.target.value)} />
+                                <Input label="结束时间" value={edu.endDate} onChange={(e) => updateItem<EducationItem>('education', edu.id, 'endDate', e.target.value)} />
+                            </div>
+                            <Input label="地点" value={edu.location} onChange={(e) => updateItem<EducationItem>('education', edu.id, 'location', e.target.value)} />
+                            </div>
                         </div>
-                        <Input label="地点" value={edu.location} onChange={(e) => updateItem<EducationItem>('education', edu.id, 'location', e.target.value)} />
-                        </div>
-                    </div>
-                    ))}
-                    <AddButton onClick={() => addItem('education')} label="添加教育经历" />
-                </>
-              );
+                        ))}
+                        <AddButton onClick={() => addItem('education')} label="添加教育经历" />
+                    </>
+                );
             case 'work':
                 return (
                     <>
                         <SectionHeaderControl 
                             title={data.sections.work.title}
-                            onUpdateTitle={(val) => updateSectionConfig('work', 'title', val)}
+                            onUpdateTitle={(val) => updateBuiltinSectionConfig('work', 'title', val)}
                         />
 
                         {isSorting && (
@@ -310,7 +392,18 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
                         {data.work.map((job) => (
                         <div key={job.id} className="mb-6 p-3 bg-gray-50 rounded border relative group">
                             <div className="grid grid-cols-1 gap-2 mb-2">
-                            <Input label="公司" value={job.company} onChange={(e) => updateItem<WorkItem>('work', job.id, 'company', e.target.value)} />
+                                <div className="flex gap-2 items-start">
+                                    <div className="flex-1">
+                                        <Input label="公司" value={job.company} onChange={(e) => updateItem<WorkItem>('work', job.id, 'company', e.target.value)} />
+                                    </div>
+                                    <button 
+                                        onClick={() => deleteItem('work', job.id)}
+                                        className="mt-5 p-1.5 text-gray-400 hover:text-red-500 hover:bg-white rounded transition-colors"
+                                        title="删除"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
                             <Input label="职位 (可选)" value={job.position} onChange={(e) => updateItem<WorkItem>('work', job.id, 'position', e.target.value)} />
                             <div className="grid grid-cols-2 gap-2">
                                 <Input label="开始时间" value={job.startDate} onChange={(e) => updateItem<WorkItem>('work', job.id, 'startDate', e.target.value)} />
@@ -333,7 +426,7 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
                     <>
                         <SectionHeaderControl 
                             title={data.sections.projects.title}
-                            onUpdateTitle={(val) => updateSectionConfig('projects', 'title', val)}
+                            onUpdateTitle={(val) => updateBuiltinSectionConfig('projects', 'title', val)}
                         />
 
                         {isSorting && (
@@ -348,7 +441,18 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
                         {data.projects.map((proj) => (
                         <div key={proj.id} className="mb-6 p-3 bg-gray-50 rounded border relative group">
                             <div className="grid grid-cols-1 gap-2 mb-2">
-                            <Input label="项目名称" value={proj.name} onChange={(e) => updateItem<ProjectItem>('projects', proj.id, 'name', e.target.value)} />
+                                <div className="flex gap-2 items-start">
+                                    <div className="flex-1">
+                                        <Input label="项目名称" value={proj.name} onChange={(e) => updateItem<ProjectItem>('projects', proj.id, 'name', e.target.value)} />
+                                    </div>
+                                    <button 
+                                        onClick={() => deleteItem('projects', proj.id)}
+                                        className="mt-5 p-1.5 text-gray-400 hover:text-red-500 hover:bg-white rounded transition-colors"
+                                        title="删除"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
                             <Input label="角色" value={proj.role} onChange={(e) => updateItem<ProjectItem>('projects', proj.id, 'role', e.target.value)} />
                             <div className="grid grid-cols-2 gap-2">
                                 <Input label="开始时间" value={proj.startDate} onChange={(e) => updateItem<ProjectItem>('projects', proj.id, 'startDate', e.target.value)} />
@@ -371,27 +475,13 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
                     <>
                         <SectionHeaderControl 
                             title={data.sections.others.title}
-                            onUpdateTitle={(val) => updateSectionConfig('others', 'title', val)}
+                            onUpdateTitle={(val) => updateBuiltinSectionConfig('others', 'title', val)}
                         />
-
-                        {isSorting && (
-                            <SectionSortManager 
-                                items={data.others}
-                                onReorder={(oldIdx, newIdx) => reorderItems('others', oldIdx, newIdx)}
-                                onDelete={(id) => deleteItem('others', id)}
-                                renderLabel={(item: SectionItem) => item.label}
-                            />
-                        )}
-
-                        {data.others.map((item) => (
-                            <div key={item.id} className="mb-2 p-2 bg-gray-50 rounded border relative flex gap-2 items-start">
-                                <div className="flex-1 space-y-2">
-                                    <Input label="标签 (如: 技能)" value={item.label} onChange={(e) => updateItem<SectionItem>('others', item.id, 'label', e.target.value)} />
-                                    <textarea className="w-full border rounded p-1 text-sm" rows={2} value={item.content} onChange={(e) => updateItem<SectionItem>('others', item.id, 'content', e.target.value)} />
-                                </div>
-                            </div>
-                        ))}
-                        <AddButton onClick={() => addItem('others')} label="添加其他项" />
+                        <RichInput 
+                            label="内容 (支持富文本)" 
+                            value={data.others} 
+                            onChange={(val) => onChange({ ...data, others: val })} 
+                        />
                     </>
                 );
             case 'summary':
@@ -399,7 +489,7 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
                     <>
                         <SectionHeaderControl 
                             title={data.sections.summary.title}
-                            onUpdateTitle={(val) => updateSectionConfig('summary', 'title', val)}
+                            onUpdateTitle={(val) => updateBuiltinSectionConfig('summary', 'title', val)}
                         />
                         <RichInput 
                             label="内容 (支持富文本)" 
@@ -410,55 +500,166 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
                 );
             default:
                 return null;
+        }
+      } else {
+          // Custom Section
+          const customSection = data.customSections.find(s => s.id === key);
+          if (!customSection) return null;
+
+          return (
+              <>
+                <SectionHeaderControl
+                    title={customSection.title}
+                    onUpdateTitle={(val) => updateCustomSection(key, 'title', val)}
+                />
+                <RichInput
+                    label="内容 (支持富文本)"
+                    value={customSection.content}
+                    onChange={(val) => updateCustomSection(key, 'content', val)}
+                />
+              </>
+          )
       }
   }
 
   return (
-    <div className="bg-white border-r h-full overflow-y-auto p-4 space-y-4 shadow-sm">
-      <h2 className="text-xl font-bold mb-6 text-gray-800">简历编辑器</h2>
+    <div className="flex flex-col h-full bg-white border-r shadow-sm relative">
+      {/* Header */}
+      <div className="p-4 border-b flex justify-between items-center flex-shrink-0">
+          <h2 className="text-xl font-bold text-gray-800">简历编辑器</h2>
+          <button 
+            onClick={() => setIsManaging(!isManaging)}
+            className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${isManaging ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+          >
+              {isManaging ? <Check size={14} /> : <Settings size={14} />}
+              {isManaging ? '完成' : '模块管理'}
+          </button>
+      </div>
 
-      {/* Basics - Fixed at top */}
-      <SectionWrapper title="基本信息" isOpen={openSection === 'basics'} onToggle={() => toggleSection('basics')}>
-        <Input label="姓名" value={data.basics.name} onChange={(e) => updateBasics('name', e.target.value)} />
-        <Input label="联系方式 (电话 | 邮箱 | 城市)" value={data.basics.contactInfo} onChange={(e) => updateBasics('contactInfo', e.target.value)} />
-        <Input label="备注 (可选，显示在联系方式下方)" value={data.basics.note || ''} onChange={(e) => updateBasics('note', e.target.value)} />
-      </SectionWrapper>
-
-      <div className="border-t border-b py-2 my-4">
-        <p className="text-xs text-gray-400 mb-2 px-1">拖拽下方模块调整顺序</p>
-        <DndContext 
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleSectionDragEnd}
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
+        {/* Basics - Always Top */}
+        <SectionWrapper 
+            title="基本信息" 
+            isOpen={openSection === 'basics'} 
+            onToggle={() => toggleSection('basics')}
+            isManaging={isManaging}
         >
-            <SortableContext 
-                items={data.sectionOrder}
-                strategy={verticalListSortingStrategy}
+            <Input label="姓名" value={data.basics.name} onChange={(e) => updateBasics('name', e.target.value)} />
+            <Input label="联系方式 (电话 | 邮箱 | 城市)" value={data.basics.contactInfo} onChange={(e) => updateBasics('contactInfo', e.target.value)} />
+            <Input label="备注 (可选，显示在联系方式下方)" value={data.basics.note || ''} onChange={(e) => updateBasics('note', e.target.value)} />
+        </SectionWrapper>
+
+        {/* Sortable List */}
+        <div className="border-t border-b py-2 my-4">
+            {!isManaging && <p className="text-xs text-gray-400 mb-2 px-1">拖拽下方模块调整顺序</p>}
+            <DndContext 
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleSectionDragEnd}
             >
-                <div className="space-y-3">
-                    {data.sectionOrder.map((key) => (
-                        <SortableSectionItem key={key} id={key}>
-                            <SectionWrapper 
-                                title={data.sections[key].title}
-                                isOpen={openSection === key}
-                                onToggle={() => toggleSection(key)}
-                                isVisible={data.sections[key].visible}
-                                onToggleVisibility={() => updateSectionConfig(key, 'visible', !data.sections[key].visible)}
-                                // No delete prop provided here, making sections undeletable
-                                // Sort Props
-                                isSorting={sortingSection === key}
-                                onToggleSort={() => toggleSorting(key)}
-                                showSortButton={key !== 'summary'} // Summary doesn't need sorting
-                            >
-                                {renderSectionContent(key)}
-                            </SectionWrapper>
-                        </SortableSectionItem>
-                    ))}
-                </div>
-            </SortableContext>
-        </DndContext>
+                <SortableContext 
+                    items={data.sectionOrder}
+                    strategy={verticalListSortingStrategy}
+                >
+                    <div className="space-y-3">
+                        {data.sectionOrder.map((key) => {
+                            let title = '';
+                            let isVisible = true;
+                            let onToggleVisibility = () => {};
+                            let isSorting = false;
+                            let onToggleSort = undefined;
+                            let showSortButton = false;
+
+                            if (isBuiltin(key)) {
+                                title = data.sections[key].title;
+                                isVisible = data.sections[key].visible;
+                                onToggleVisibility = () => updateBuiltinSectionConfig(key, 'visible', !data.sections[key].visible);
+                                if (key !== 'summary' && key !== 'others') {
+                                    showSortButton = true;
+                                    isSorting = sortingSection === key;
+                                    onToggleSort = () => toggleSorting(key);
+                                }
+                            } else {
+                                const customSec = data.customSections.find(s => s.id === key);
+                                if (customSec) {
+                                    title = customSec.title;
+                                    isVisible = customSec.visible;
+                                    onToggleVisibility = () => updateCustomSection(key, 'visible', !isVisible);
+                                    // Custom sections are just one text block, no internal sorting
+                                    showSortButton = false;
+                                }
+                            }
+
+                            return (
+                                <SortableSectionItem key={key} id={key} isDragDisabled={false}>
+                                    <SectionWrapper 
+                                        title={title}
+                                        isOpen={openSection === key}
+                                        onToggle={() => toggleSection(key)}
+                                        isVisible={isVisible}
+                                        onToggleVisibility={onToggleVisibility}
+                                        onDelete={() => handleDeleteModule(key)}
+                                        // Sort Props
+                                        isSorting={isSorting}
+                                        onToggleSort={onToggleSort}
+                                        showSortButton={showSortButton}
+                                        // Management Prop
+                                        isManaging={isManaging}
+                                        dragHandleProps={{}} // Placeholder, will be injected by SortableSectionItem
+                                    >
+                                        {renderSectionContent(key)}
+                                    </SectionWrapper>
+                                </SortableSectionItem>
+                            );
+                        })}
+                    </div>
+                </SortableContext>
+            </DndContext>
+        </div>
       </div>
       
+      {/* Add Button - Fixed at Bottom in Managing Mode */}
+      {isManaging && (
+         <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t shadow-lg z-20 flex justify-center">
+             <div className="relative w-full">
+                <button 
+                    onClick={() => setShowAddMenu(!showAddMenu)}
+                    className="w-full py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                >
+                    <Plus size={18} />
+                    添加模块
+                </button>
+                {showAddMenu && (
+                    <>
+                        <div className="fixed inset-0 z-30" onClick={() => setShowAddMenu(false)}></div>
+                        <div className="absolute bottom-full left-0 w-full mb-2 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-40 animate-fade-in-up">
+                            {availableBuiltins.length > 0 && (
+                                <div className="p-2 border-b bg-gray-50 text-xs font-bold text-gray-500 uppercase">恢复默认模块</div>
+                            )}
+                            {availableBuiltins.map(key => (
+                                <button
+                                    key={key}
+                                    onClick={() => handleAddModule(key)}
+                                    className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 border-b last:border-0"
+                                >
+                                    {data.sections[key].title || key}
+                                </button>
+                            ))}
+                            <div className="p-2 border-b bg-gray-50 text-xs font-bold text-gray-500 uppercase">新建</div>
+                            <button
+                                onClick={() => handleAddModule('custom')}
+                                className="w-full text-left px-4 py-3 text-sm font-medium text-blue-600 hover:bg-blue-50"
+                            >
+                                自定义模块
+                            </button>
+                        </div>
+                    </>
+                )}
+             </div>
+         </div>
+      )}
+
     </div>
   );
 };
@@ -476,6 +677,7 @@ const SectionWrapper: React.FC<{
     isSorting?: boolean;
     onToggleSort?: () => void;
     showSortButton?: boolean;
+    isManaging?: boolean;
 }> = ({ 
     title, 
     isOpen, 
@@ -487,63 +689,71 @@ const SectionWrapper: React.FC<{
     dragHandleProps,
     isSorting,
     onToggleSort,
-    showSortButton
+    showSortButton,
+    isManaging
 }) => (
-    <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
+    <div className={`border rounded-lg overflow-hidden bg-white shadow-sm transition-all ${isManaging ? 'border-dashed border-gray-300' : ''}`}>
         <div 
-            className="w-full bg-gray-100 p-3 flex justify-between items-center font-semibold text-sm hover:bg-gray-200 transition-colors cursor-pointer group select-none" 
+            className={`w-full p-3 flex justify-between items-center font-semibold text-sm transition-colors select-none ${isOpen ? 'bg-gray-100' : 'bg-white hover:bg-gray-50'} ${isManaging ? 'cursor-default' : 'cursor-pointer'}`}
             onClick={onToggle}
         >
             <div className="flex items-center gap-2 flex-1">
-                {/* Drag Handle */}
+                {/* Drag Handle - Always visible now (if props exist) */}
                 {dragHandleProps && (
                     <div {...dragHandleProps} className="cursor-grab text-gray-400 hover:text-gray-700 p-1" onClick={(e) => e.stopPropagation()}>
                         <GripVertical size={14} />
                     </div>
                 )}
                 
-                 <span className={isVisible === false ? "opacity-50 line-through decoration-gray-400" : ""}>
+                 <span className={`${isVisible === false ? "opacity-50 line-through decoration-gray-400" : ""} ${isManaging ? 'pl-1' : ''}`}>
                     {title}
                 </span>
-                {isVisible === false && <span className="text-[10px] px-1.5 py-0.5 bg-red-100 text-red-600 rounded-full font-normal">已隐藏</span>}
+                {isVisible === false && !isManaging && <span className="text-[10px] px-1.5 py-0.5 bg-red-100 text-red-600 rounded-full font-normal">已隐藏</span>}
             </div>
            
             <div className="flex items-center gap-1">
                 
-                {showSortButton && onToggleSort && (
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); onToggleSort(); }}
-                        className={`p-1.5 rounded hover:bg-blue-100 hover:text-blue-600 transition-colors mr-1 ${isSorting ? 'text-blue-600 bg-blue-50 ring-1 ring-blue-200' : 'text-gray-400'}`}
-                        title={isSorting ? "关闭排序" : "调整内部顺序"}
-                    >
-                        {isSorting ? <X size={16} /> : <ListOrdered size={16} />}
-                    </button>
-                )}
+                {isManaging ? (
+                    // Managing Mode: Delete Button Only
+                    onDelete ? (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                            className="p-1.5 rounded bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all"
+                            title="删除模块"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    ) : null
+                ) : (
+                    // Normal Mode: Controls
+                    <>
+                        {showSortButton && onToggleSort && (
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); onToggleSort(); }}
+                                className={`p-1.5 rounded hover:bg-blue-100 hover:text-blue-600 transition-colors mr-1 ${isSorting ? 'text-blue-600 bg-blue-50 ring-1 ring-blue-200' : 'text-gray-400'}`}
+                                title={isSorting ? "关闭排序" : "调整内部顺序"}
+                            >
+                                {isSorting ? <X size={16} /> : <ListOrdered size={16} />}
+                            </button>
+                        )}
 
-                {onToggleVisibility && (
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }}
-                        className={`p-1.5 rounded hover:bg-gray-300 transition-colors ${isVisible === false ? 'text-red-500' : 'text-gray-400 hover:text-gray-700'}`}
-                        title={isVisible === false ? "显示此模块" : "隐藏此模块"}
-                    >
-                        {isVisible === false ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
+                        {onToggleVisibility && (
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }}
+                                className={`p-1.5 rounded hover:bg-gray-300 transition-colors ${isVisible === false ? 'text-red-500' : 'text-gray-400 hover:text-gray-700'}`}
+                                title={isVisible === false ? "显示此模块" : "隐藏此模块"}
+                            >
+                                {isVisible === false ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                        )}
+                        <div className="text-gray-500 ml-1">
+                            {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </div>
+                    </>
                 )}
-                {onDelete && (
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                        className="p-1.5 rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors"
-                        title="移除此模块"
-                    >
-                        <Trash2 size={16} />
-                    </button>
-                )}
-                <div className="text-gray-500 ml-1">
-                     {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                </div>
             </div>
         </div>
-        {isOpen && <div className="p-3 bg-white animate-fade-in border-t">{children}</div>}
+        {!isManaging && isOpen && <div className="p-3 bg-white animate-fade-in border-t">{children}</div>}
     </div>
 );
 
@@ -554,9 +764,6 @@ const Input: React.FC<{ label: string; value: string; onChange: (e: React.Change
     </div>
 );
 
-// DeleteButton removed from global use, or rather redefined locally if needed
-// But we are using it inside sorting manager now.
-// We'll keep AddButton
 const AddButton: React.FC<{ onClick: () => void; label: string }> = ({ onClick, label }) => (
     <button onClick={onClick} className="w-full py-2 mt-2 border-2 border-dashed border-gray-300 rounded text-gray-500 hover:border-black hover:text-black transition-all text-sm flex items-center justify-center gap-2">
         <Plus size={16} /> {label}

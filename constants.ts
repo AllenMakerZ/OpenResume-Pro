@@ -1,4 +1,4 @@
-import { BaseItem, EducationItem, WorkItem, ProjectItem, SectionItem, SectionKey, SectionSettings, ResumeData } from './types';
+import { ResumeData } from './types';
 
 // Re-export types
 export * from './types';
@@ -18,6 +18,7 @@ export const INITIAL_RESUME_DATA: ResumeData = {
     others: { title: '技能与证书', visible: true },
     summary: { title: '个人总结', visible: true }
   },
+  customSections: [],
   education: [
     {
       id: 'edu-1',
@@ -39,8 +40,8 @@ export const INITIAL_RESUME_DATA: ResumeData = {
   work: [
     {
       id: 'work-1',
-      company: '某某科技有限公司（产品经理）',
-      position: '',
+      company: '某某科技有限公司',
+      position: '产品经理',
       startDate: '2023年03月',
       endDate: '2023年06月',
       location: '城市',
@@ -55,8 +56,8 @@ export const INITIAL_RESUME_DATA: ResumeData = {
   projects: [
     {
       id: 'proj-1',
-      name: "某知名商业挑战赛（核心成员）",
-      role: '',
+      name: "某知名商业挑战赛",
+      role: '核心成员',
       startDate: '2022年03月',
       endDate: '2022年04月',
       location: '城市',
@@ -67,15 +68,14 @@ export const INITIAL_RESUME_DATA: ResumeData = {
 </ul>`
     }
   ],
-  others: [
-    { id: 'other-1', label: '技能', content: '熟练掌握相关设计软件、办公软件、AI辅助工具' },
-    { id: 'other-2', label: '证书', content: 'PMP项目管理资格认证' },
-    { id: 'other-3', label: '奖项', content: '某年度创意设计奖项' },
-    { id: 'other-4', label: '语言', content: '外语流利' }
-  ],
+  others: `<ul>
+<li><b>技能:</b> 熟练掌握相关设计软件、办公软件、AI辅助工具</li>
+<li><b>证书:</b> PMP项目管理资格认证</li>
+<li><b>奖项:</b> 某年度创意设计奖项</li>
+<li><b>语言:</b> 外语流利</li>
+</ul>`,
   summary: `<ul>
 <li><b>乐观踏实:</b> 对待问题持乐观态度，永远是以解决问题为先，认真对待每一项任务并想办法协调内外部资源将工作踏实完成</li>
 <li><b>积极主动:</b> 拥有强烈好奇心，对新鲜的领域感兴趣，会主动学习所需知识且执行力强，主动发起过很多项目并进行调研</li>
-<li><b>学习能力:</b> 利用进度计划表和时间管理软件管理生活中的事情，有学习方法论和一定的执行力</li>
 </ul>`
 };
