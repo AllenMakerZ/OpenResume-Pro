@@ -9,11 +9,20 @@ import domtoimage from 'dom-to-image';
 import jsPDF from 'jspdf';
 
 export default function App() {
-  const [resumeData, setResumeData] = useState<ResumeData>(INITIAL_RESUME_DATA);
+  const [resumeData, setResumeData] = useState<ResumeData>(() => {
+    const saved = localStorage.getItem('resumeData');
+    return saved ? JSON.parse(saved) : INITIAL_RESUME_DATA;
+  });
+
   const previewRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [viewMode, setViewMode] = useState<'image' | 'pdf'>('image');
+
+  // Persist data
+  useEffect(() => {
+    localStorage.setItem('resumeData', JSON.stringify(resumeData));
+  }, [resumeData]);
 
   useEffect(() => {
     if (!previewRef.current) return;

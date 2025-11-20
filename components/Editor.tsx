@@ -11,34 +11,19 @@ interface EditorProps {
 
 const SectionHeaderControl = ({ 
   title, 
-  visible, 
   onUpdateTitle, 
-  onToggleVisible 
 }: { 
   title: string; 
-  visible: boolean; 
   onUpdateTitle: (val: string) => void; 
-  onToggleVisible: () => void;
 }) => {
   return (
-    <div className="mb-4 p-2 bg-gray-100 rounded-md flex items-center gap-2 border border-gray-200">
-        <div className="flex-1">
-            <label className="block text-[10px] text-gray-500 uppercase font-bold mb-1">模块标题</label>
-            <input 
-                className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-sm font-medium focus:border-black outline-none"
-                value={title}
-                onChange={(e) => onUpdateTitle(e.target.value)}
-            />
-        </div>
-        <div className="flex flex-col items-center justify-center pt-4">
-             <button 
-                onClick={onToggleVisible}
-                className={`p-1.5 rounded ${visible ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}
-                title={visible ? "隐藏此模块" : "显示此模块"}
-            >
-                {visible ? <Eye size={16} /> : <EyeOff size={16} />}
-            </button>
-        </div>
+    <div className="mb-4">
+        <label className="block text-[10px] text-gray-500 uppercase font-bold mb-1">模块标题</label>
+        <input 
+            className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-sm font-medium focus:border-black outline-none"
+            value={title}
+            onChange={(e) => onUpdateTitle(e.target.value)}
+        />
     </div>
   );
 };
@@ -106,12 +91,16 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
       </SectionWrapper>
 
       {/* Education */}
-      <SectionWrapper title={data.sections.education.title || "教育经历"} isOpen={openSection === 'education'} onToggle={() => toggleSection('education')}>
+      <SectionWrapper 
+        title={data.sections.education.title || "教育经历"} 
+        isOpen={openSection === 'education'} 
+        onToggle={() => toggleSection('education')}
+        isVisible={data.sections.education.visible}
+        onToggleVisibility={() => updateSectionConfig('education', 'visible', !data.sections.education.visible)}
+      >
         <SectionHeaderControl 
             title={data.sections.education.title}
-            visible={data.sections.education.visible}
             onUpdateTitle={(val) => updateSectionConfig('education', 'title', val)}
-            onToggleVisible={() => updateSectionConfig('education', 'visible', !data.sections.education.visible)}
         />
         {data.education.map((edu) => (
           <div key={edu.id} className="mb-6 p-3 bg-gray-50 rounded border relative group">
@@ -131,12 +120,16 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
       </SectionWrapper>
 
        {/* Work */}
-       <SectionWrapper title={data.sections.work.title || "工作经历"} isOpen={openSection === 'work'} onToggle={() => toggleSection('work')}>
+       <SectionWrapper 
+        title={data.sections.work.title || "工作经历"} 
+        isOpen={openSection === 'work'} 
+        onToggle={() => toggleSection('work')}
+        isVisible={data.sections.work.visible}
+        onToggleVisibility={() => updateSectionConfig('work', 'visible', !data.sections.work.visible)}
+       >
         <SectionHeaderControl 
             title={data.sections.work.title}
-            visible={data.sections.work.visible}
             onUpdateTitle={(val) => updateSectionConfig('work', 'title', val)}
-            onToggleVisible={() => updateSectionConfig('work', 'visible', !data.sections.work.visible)}
         />
         {data.work.map((job) => (
           <div key={job.id} className="mb-6 p-3 bg-gray-50 rounded border relative group">
@@ -161,12 +154,16 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
       </SectionWrapper>
 
       {/* Projects */}
-      <SectionWrapper title={data.sections.projects.title || "项目经历"} isOpen={openSection === 'projects'} onToggle={() => toggleSection('projects')}>
+      <SectionWrapper 
+        title={data.sections.projects.title || "项目经历"} 
+        isOpen={openSection === 'projects'} 
+        onToggle={() => toggleSection('projects')}
+        isVisible={data.sections.projects.visible}
+        onToggleVisibility={() => updateSectionConfig('projects', 'visible', !data.sections.projects.visible)}
+      >
         <SectionHeaderControl 
             title={data.sections.projects.title}
-            visible={data.sections.projects.visible}
             onUpdateTitle={(val) => updateSectionConfig('projects', 'title', val)}
-            onToggleVisible={() => updateSectionConfig('projects', 'visible', !data.sections.projects.visible)}
         />
         {data.projects.map((proj) => (
           <div key={proj.id} className="mb-6 p-3 bg-gray-50 rounded border relative group">
@@ -191,12 +188,16 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
       </SectionWrapper>
 
       {/* Others */}
-      <SectionWrapper title={data.sections.others.title || "其他 (技能/证书)"} isOpen={openSection === 'others'} onToggle={() => toggleSection('others')}>
+      <SectionWrapper 
+        title={data.sections.others.title || "其他 (技能/证书)"} 
+        isOpen={openSection === 'others'} 
+        onToggle={() => toggleSection('others')}
+        isVisible={data.sections.others.visible}
+        onToggleVisibility={() => updateSectionConfig('others', 'visible', !data.sections.others.visible)}
+      >
         <SectionHeaderControl 
             title={data.sections.others.title}
-            visible={data.sections.others.visible}
             onUpdateTitle={(val) => updateSectionConfig('others', 'title', val)}
-            onToggleVisible={() => updateSectionConfig('others', 'visible', !data.sections.others.visible)}
         />
         {data.others.map((item) => (
              <div key={item.id} className="mb-2 p-2 bg-gray-50 rounded border relative flex gap-2 items-start">
@@ -211,12 +212,16 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
       </SectionWrapper>
 
        {/* Summary */}
-       <SectionWrapper title={data.sections.summary.title || "个人总结"} isOpen={openSection === 'summary'} onToggle={() => toggleSection('summary')}>
+       <SectionWrapper 
+        title={data.sections.summary.title || "个人总结"} 
+        isOpen={openSection === 'summary'} 
+        onToggle={() => toggleSection('summary')}
+        isVisible={data.sections.summary.visible}
+        onToggleVisibility={() => updateSectionConfig('summary', 'visible', !data.sections.summary.visible)}
+       >
         <SectionHeaderControl 
             title={data.sections.summary.title}
-            visible={data.sections.summary.visible}
             onUpdateTitle={(val) => updateSectionConfig('summary', 'title', val)}
-            onToggleVisible={() => updateSectionConfig('summary', 'visible', !data.sections.summary.visible)}
         />
         {data.summary.map((item) => (
              <div key={item.id} className="mb-2 p-2 bg-gray-50 rounded border relative flex gap-2 items-start">
@@ -234,12 +239,41 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
 };
 
 // Small Helper Components
-const SectionWrapper: React.FC<{ title: string; isOpen: boolean; onToggle: () => void; children: React.ReactNode }> = ({ title, isOpen, onToggle, children }) => (
+const SectionWrapper: React.FC<{ 
+    title: string; 
+    isOpen: boolean; 
+    onToggle: () => void; 
+    children: React.ReactNode;
+    isVisible?: boolean;
+    onToggleVisibility?: () => void;
+}> = ({ title, isOpen, onToggle, children, isVisible, onToggleVisibility }) => (
     <div className="border rounded-lg overflow-hidden mb-2">
-        <button className="w-full bg-gray-100 p-3 flex justify-between items-center font-semibold text-sm hover:bg-gray-200 transition-colors" onClick={onToggle}>
-            {title}
-            {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </button>
+        <div 
+            className="w-full bg-gray-100 p-3 flex justify-between items-center font-semibold text-sm hover:bg-gray-200 transition-colors cursor-pointer group" 
+            onClick={onToggle}
+        >
+            <div className="flex items-center gap-2">
+                 <span className={isVisible === false ? "opacity-50 line-through decoration-gray-400" : ""}>
+                    {title}
+                </span>
+                {isVisible === false && <span className="text-[10px] px-1.5 py-0.5 bg-red-100 text-red-600 rounded-full font-normal">已隐藏</span>}
+            </div>
+           
+            <div className="flex items-center gap-1">
+                {onToggleVisibility && (
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }}
+                        className={`p-1.5 rounded hover:bg-gray-300 transition-colors mr-1 ${isVisible === false ? 'text-red-500 hover:bg-red-100' : 'text-gray-400 hover:text-gray-700'}`}
+                        title={isVisible === false ? "显示此模块" : "隐藏此模块"}
+                    >
+                        {isVisible === false ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                )}
+                <div className="text-gray-500">
+                     {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </div>
+            </div>
+        </div>
         {isOpen && <div className="p-3 bg-white animate-fade-in">{children}</div>}
     </div>
 );
