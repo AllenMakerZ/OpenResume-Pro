@@ -3,7 +3,7 @@ import { ResumePreview } from './components/ResumePreview';
 import { Editor } from './components/Editor';
 import { INITIAL_RESUME_DATA } from './constants';
 import { ResumeData, LayoutSettings } from './types';
-import { Download, Printer, FileImage, Images, FileText, RotateCcw, Type, ArrowUpDown, Maximize, Columns } from 'lucide-react';
+import { Download, Printer, FileImage, Images, FileText, RotateCcw, Type, ArrowUpDown, Maximize } from 'lucide-react';
 // @ts-ignore - dom-to-image 没有 TypeScript 类型定义
 import domtoimage from 'dom-to-image';
 import jsPDF from 'jspdf';
@@ -41,7 +41,6 @@ export default function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [viewMode, setViewMode] = useState<'image' | 'pdf'>('pdf');
-  const [isTwoColumn, setIsTwoColumn] = useState(false);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
 
   // Persist data
@@ -188,7 +187,7 @@ export default function App() {
 
         {/* Toolbar */}
         <div className="bg-white border-b px-4 min-h-[68px] flex justify-between items-center shadow-sm z-20 print:hidden flex-wrap gap-y-2">
-            <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4">
             <div className="flex bg-gray-100 p-1 rounded-lg">
               <button
                 onClick={() => setViewMode('image')}
@@ -198,18 +197,11 @@ export default function App() {
                 图片预览
               </button>
               <button
-                onClick={() => { setViewMode('pdf'); setIsTwoColumn(false); }}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'pdf' && !isTwoColumn ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                onClick={() => setViewMode('pdf')}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'pdf' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 <FileText size={14} />
-                单页预览
-              </button>
-              <button
-                onClick={() => { setViewMode('pdf'); setIsTwoColumn(true); }}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'pdf' && isTwoColumn ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                <Columns size={14} />
-                双页预览
+                PDF 预览
               </button>
             </div>
 
@@ -320,9 +312,9 @@ export default function App() {
         </div>
 
         {/* Preview Scroll Area */}
-        <div className="flex-1 overflow-auto p-8 bg-gray-200/50 flex justify-center print:p-0 print:m-0 print:bg-white print:overflow-visible print:h-auto print:block">
+        <div className="flex-1 overflow-y-auto p-8 bg-gray-200/50 flex justify-center print:p-0 print:m-0 print:bg-white print:overflow-visible print:h-auto print:block">
           <div className="scale-[0.85] md:scale-100 origin-top transition-transform duration-300 print:transform-none print:scale-100 print:w-full print:h-auto">
-            <ResumePreview ref={previewRef} data={resumeData} viewMode={viewMode} layoutSettings={layoutSettings} isTwoColumn={isTwoColumn} />
+            <ResumePreview ref={previewRef} data={resumeData} viewMode={viewMode} layoutSettings={layoutSettings} />
           </div>
         </div>
       </div>
