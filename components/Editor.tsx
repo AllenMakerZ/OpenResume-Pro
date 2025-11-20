@@ -525,11 +525,11 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
   return (
     <div className="flex flex-col h-full bg-white border-r shadow-sm relative">
       {/* Header */}
-      <div className="p-4 border-b flex justify-between items-center flex-shrink-0">
+      <div className="px-4 border-b min-h-[68px] flex justify-between items-center flex-shrink-0">
           <h2 className="text-xl font-bold text-gray-800">简历编辑器</h2>
           <button 
             onClick={() => setIsManaging(!isManaging)}
-            className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${isManaging ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            className={`flex items-center gap-1 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${isManaging ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           >
               {isManaging ? <Check size={14} /> : <Settings size={14} />}
               {isManaging ? '完成' : '模块管理'}
