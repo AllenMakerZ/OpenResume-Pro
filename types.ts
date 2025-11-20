@@ -44,6 +44,7 @@ export interface ResumeData {
   basics: {
     name: string;
     contactInfo: string; // Combined phone | email | location string
+    note?: string; // Additional note/tagline
   };
   sectionOrder: SectionKey[];
   sections: Record<SectionKey, SectionSettings>; // Configuration for section titles and visibility

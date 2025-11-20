@@ -453,6 +453,7 @@ export const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
       <SectionWrapper title="基本信息" isOpen={openSection === 'basics'} onToggle={() => toggleSection('basics')}>
         <Input label="姓名" value={data.basics.name} onChange={(e) => updateBasics('name', e.target.value)} />
         <Input label="联系方式 (电话 | 邮箱 | 城市)" value={data.basics.contactInfo} onChange={(e) => updateBasics('contactInfo', e.target.value)} />
+        <Input label="备注 (可选，显示在联系方式下方)" value={data.basics.note || ''} onChange={(e) => updateBasics('note', e.target.value)} />
       </SectionWrapper>
 
       <div className="border-t border-b py-2 my-4">

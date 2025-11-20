@@ -264,6 +264,7 @@ export const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ d
                     <header className="mb-8 break-inside-avoid">
                         <h1 className="text-4xl font-extrabold text-black tracking-wider mb-2">{data.basics.name}</h1>
                         <p className="text-gray-600 font-medium">{data.basics.contactInfo}</p>
+                        {data.basics.note && <p className="text-gray-500 text-sm mt-1">{data.basics.note}</p>}
                     </header>
 
                     {/* Render sections based on order */}

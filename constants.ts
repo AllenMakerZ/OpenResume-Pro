@@ -4,7 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 export const INITIAL_RESUME_DATA: ResumeData = {
   basics: {
     name: '李白',
-    contactInfo: '13800138000 丨 example@email.com 丨 城市'
+    contactInfo: '13800138000 丨 example@email.com 丨 城市',
+    note: ''
   },
   sectionOrder: ['education', 'work', 'projects', 'others', 'summary'],
   sections: {
