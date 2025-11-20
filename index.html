@@ -1,40 +1,53 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ResumeBuilder Pro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      /* Custom clip-path for the trapezoid header effect */
-      .header-trap {
-        clip-path: polygon(0 0, 95% 0, 100% 100%, 0% 100%);
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ResumeBuilder Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // 禁用 Tailwind CDN 的生产环境警告（开发环境可以忽略）
+    if (typeof window !== 'undefined' && window.tailwind) {
+      window.tailwind.config = window.tailwind.config || {};
+      window.tailwind.config.safelist = [];
+    }
+  </script>
+  <style>
+    /* Custom clip-path for the trapezoid header effect */
+    .header-trap {
+      clip-path: polygon(0 0, 95% 0, 100% 100%, 0% 100%);
+    }
+
+    /* A4 Paper Size Simulation */
+    .a4-paper {
+      width: 210mm;
+      min-height: 297mm;
+      background: white;
+      margin: 0 auto;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
       }
-      /* A4 Paper Size Simulation */
-      .a4-paper {
-        width: 210mm;
-        min-height: 297mm;
-        background: white;
-        margin: 0 auto;
-        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+
+      #resume-preview,
+      #resume-preview * {
+        visibility: visible;
       }
-      @media print {
-        body * {
-          visibility: hidden;
-        }
-        #resume-preview, #resume-preview * {
-          visibility: visible;
-        }
-        #resume-preview {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
-          margin: 0;
-          box-shadow: none;
-        }
+
+      #resume-preview {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        box-shadow: none;
       }
-    </style>
+    }
+  </style>
   <script type="importmap">
 {
   "imports": {
@@ -44,14 +57,17 @@
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "html2canvas": "https://aistudiocdn.com/html2canvas@^1.4.1",
+    "dom-to-image": "https://cdn.skypack.dev/dom-to-image@2.6.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-gray-100 text-gray-900 antialiased">
-    <div id="root"></div>
+
+<body class="bg-gray-100 text-gray-900 antialiased">
+  <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
+
 </html>

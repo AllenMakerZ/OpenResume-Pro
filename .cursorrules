@@ -8,18 +8,22 @@
 - 基础增删改查（Basic, Education, Work, Projects, Others, Summary）。
 - **高级编辑功能**：支持自定义各模块标题（如将“教育经历”改为“学术背景”），支持隐藏/显示特定模块。
 - **视觉还原**：实现了特殊的梯形标题栏（黑色主块+浅灰装饰块），使用了 `clip-path` 实现斜切效果。
-- **导出**：支持 html2canvas + jspdf 导出 PDF 和 PNG。
+- **导出**：支持 dom-to-image + jspdf 导出 PDF 和 PNG。
 
 # Tech Stack & Architecture
 - **Framework**: React 19 (Client-Side Rendering).
 - **Language**: TypeScript.
-- **Dependencies**: Loaded via ES Modules in `index.html` (React, ReactDOM, Lucide, html2canvas, jsPDF, uuid).
+- **Dependencies**: Loaded via ES Modules in `index.html` (React, ReactDOM, Lucide, dom-to-image, jsPDF, uuid). 本地开发使用 pnpm 安装依赖。
 - **Styling**: Tailwind CSS (Utility-first) + Inline Styles for dynamic geometry (`clip-path`).
 - **State Management**: Centralized `ResumeData` state in `App.tsx`, passed down to `Editor` (mutator) and `ResumePreview` (renderer).
+- **Export**: 使用 `dom-to-image` 替代 `html2canvas`，对 CSS `clip-path` 支持更好，确保导出与预览效果一致。
 
 # File Structure Rules (Crucial)
 1. **根目录即源码**: 项目没有 `src/` 目录，所有 `.tsx`, `.ts` 文件都在根目录或 `components/` 子目录下。不要创建 `src` 文件夹。
-2. **依赖管理**: 不要运行 `npm install`。所有第三方库 (React, ReactDOM, Lucide, jsPDF 等) 均通过 `index.html` 中的 `<script type="importmap">` 定义。在代码中正常 `import` 即可，不需要修改 package.json。
+2. **依赖管理**: 
+   - **本地开发**: 使用 `pnpm install` 安装 `package.json` 中的依赖，Vite 从 `node_modules` 加载。
+   - **WebContainer 环境**: 可选通过 `index.html` 中的 `<script type="importmap">` 从 CDN 加载，但本地开发必须使用 npm 包。
+   - 添加新依赖时必须同时更新 `package.json` 和运行 `pnpm install`。
 
 # File Structure
 - `index.html`: 入口，包含 importmap 和全局样式（A4 纸张定义）。
@@ -43,6 +47,7 @@
    - 字体大小、行高需适配阅读，避免过大或过小。
 
 # Development Guidelines
-1. **No npm install**: 这是一个无 Node 环境，所有库必须通过 `index.html` 的 importmap 引用。
+1. **依赖管理**: 本地开发需要运行 `pnpm install` 安装依赖。添加新依赖时必须更新 `package.json`。
 2. **Type Safety**: 任何数据结构的修改（如新增字段）必须先在 `types.ts` 定义，并在 `constants.ts` 初始化，最后在 `Editor.tsx` 和 `ResumePreview.tsx` 适配。
 3. **Component Isolation**: `SectionHeader` 是纯展示组件，只接收 `title`。所有业务逻辑（如是否显示该模块）在父组件判断。
+4. **Export Best Practice**: 导出功能使用 `dom-to-image` 库，直接从预览元素导出，确保与浏览器渲染完全一致。避免手动克隆和修复样式。

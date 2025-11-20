@@ -4,7 +4,8 @@ import { Editor } from './components/Editor';
 import { INITIAL_RESUME_DATA } from './constants';
 import { ResumeData } from './types';
 import { Download, Printer, Share2, FileImage } from 'lucide-react';
-import html2canvas from 'html2canvas';
+// @ts-ignore - dom-to-image 没有 TypeScript 类型定义
+import domtoimage from 'dom-to-image';
 import jsPDF from 'jspdf';
 
 export default function App() {
@@ -20,24 +21,41 @@ export default function App() {
     if (!previewRef.current) return;
     setIsExporting(true);
     try {
-      const canvas = await html2canvas(previewRef.current, {
-        scale: 2, // Higher scale for better quality
-        useCORS: true,
-        backgroundColor: '#ffffff'
+      const previewElement = previewRef.current;
+
+      // 使用 2 倍分辨率以提高导出质量
+      const scale = 2;
+      const width = previewElement.offsetWidth * scale;
+      const height = previewElement.offsetHeight * scale;
+
+      // 使用 dom-to-image，对 clip-path 支持更好
+      const dataUrl = await domtoimage.toPng(previewElement, {
+        quality: 1,
+        width: width,
+        height: height,
+        style: {
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+          width: `${previewElement.offsetWidth}px`,
+          height: `${previewElement.offsetHeight}px`
+        }
       });
 
-      const imgData = canvas.toDataURL('image/png');
+      // 创建一个临时 Image 对象来获取尺寸
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise((resolve) => {
+        img.onload = resolve;
+      });
+
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
 
-      // Calculate height to fit width (standard A4 behavior)
-      const imgHeightInPdf = (imgHeight * pdfWidth) / imgWidth;
+      // 计算缩放比例
+      const imgHeightInPdf = (img.height * pdfWidth) / img.width;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeightInPdf);
+      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, imgHeightInPdf);
       pdf.save(`${resumeData.basics.name}_Resume.pdf`);
     } catch (error) {
       console.error("PDF Generation Error:", error);
@@ -51,14 +69,29 @@ export default function App() {
     if (!previewRef.current) return;
     setIsExporting(true);
     try {
-      const canvas = await html2canvas(previewRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff'
+      const previewElement = previewRef.current;
+
+      // 使用 2 倍分辨率以提高导出质量
+      const scale = 2;
+      const width = previewElement.offsetWidth * scale;
+      const height = previewElement.offsetHeight * scale;
+
+      // 使用 dom-to-image，对 clip-path 支持更好
+      const dataUrl = await domtoimage.toPng(previewElement, {
+        quality: 1,
+        width: width,
+        height: height,
+        style: {
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+          width: `${previewElement.offsetWidth}px`,
+          height: `${previewElement.offsetHeight}px`
+        }
       });
+
       const link = document.createElement('a');
       link.download = `${resumeData.basics.name}_Resume.png`;
-      link.href = canvas.toDataURL();
+      link.href = dataUrl;
       link.click();
     } catch (error) {
       console.error("PNG Generation Error:", error);
