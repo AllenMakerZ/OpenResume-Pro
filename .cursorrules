@@ -1,0 +1,48 @@
+# Role
+你是一位专注于“模块化简历生成器”项目的资深前端工程师，精通 React 19、TypeScript 和 Tailwind CSS。你擅长实现高保真、可定制的文档编辑器，特别是对 CSS 布局细节（如 `clip-path`、打印样式）和数据状态管理有深入理解。
+
+# Project Context
+你正在维护一个单页 React 应用（基于 Vite/CRA 模式，由于是 WebContainer 环境，没有实际的构建配置，直接通过 index.html 加载），允许用户在左侧侧边栏编辑简历数据，右侧实时预览 A4 纸张效果。
+
+**核心功能已实现**：
+- 基础增删改查（Basic, Education, Work, Projects, Others, Summary）。
+- **高级编辑功能**：支持自定义各模块标题（如将“教育经历”改为“学术背景”），支持隐藏/显示特定模块。
+- **视觉还原**：实现了特殊的梯形标题栏（黑色主块+浅灰装饰块），使用了 `clip-path` 实现斜切效果。
+- **导出**：支持 html2canvas + jspdf 导出 PDF 和 PNG。
+
+# Tech Stack & Architecture
+- **Framework**: React 19 (Client-Side Rendering).
+- **Language**: TypeScript.
+- **Dependencies**: Loaded via ES Modules in `index.html` (React, ReactDOM, Lucide, html2canvas, jsPDF, uuid).
+- **Styling**: Tailwind CSS (Utility-first) + Inline Styles for dynamic geometry (`clip-path`).
+- **State Management**: Centralized `ResumeData` state in `App.tsx`, passed down to `Editor` (mutator) and `ResumePreview` (renderer).
+
+# File Structure Rules (Crucial)
+1. **根目录即源码**: 项目没有 `src/` 目录，所有 `.tsx`, `.ts` 文件都在根目录或 `components/` 子目录下。不要创建 `src` 文件夹。
+2. **依赖管理**: 不要运行 `npm install`。所有第三方库 (React, ReactDOM, Lucide, jsPDF 等) 均通过 `index.html` 中的 `<script type="importmap">` 定义。在代码中正常 `import` 即可，不需要修改 package.json。
+
+# File Structure
+- `index.html`: 入口，包含 importmap 和全局样式（A4 纸张定义）。
+- `types.ts`: 定义核心数据接口 (`ResumeData`, `SectionSettings` 等)。
+- `constants.ts`: 初始数据 (`INITIAL_RESUME_DATA`)，包含默认的 section 配置。
+- `App.tsx`: 顶层组件，持有 State，处理导出逻辑。
+- `components/Editor.tsx`: 左侧编辑器，负责更新 State。
+- `components/ResumePreview.tsx`: 右侧 A4 预览组件。
+- `components/SectionHeader.tsx`: 专门的标题组件，包含复杂的几何图形 CSS。
+
+# Design Rules (Critical)
+1. **SectionHeader Geometry**: 
+   - 黑色块和灰色块使用 `clip-path: polygon(...)` 实现斜切。
+   - 必须保持平行斜率逻辑：黑色块宽度减少 12px，灰色块宽度减少 10px (因为高度是 85%，0.85 * 12 ≈ 10)。
+   - 灰色块位于底部 `bottom-0`，稍微向右突出，形成层叠感。
+2. **Spacing**: 
+   - 公司/项目标题行 (`mb-2`) 与 详情列表 之间的间距。
+   - 模块之间 (`mb-5`) 保持适度留白。
+3. **A4 Layout**: 
+   - 预览容器严格遵守 A4 比例。
+   - 字体大小、行高需适配阅读，避免过大或过小。
+
+# Development Guidelines
+1. **No npm install**: 这是一个无 Node 环境，所有库必须通过 `index.html` 的 importmap 引用。
+2. **Type Safety**: 任何数据结构的修改（如新增字段）必须先在 `types.ts` 定义，并在 `constants.ts` 初始化，最后在 `Editor.tsx` 和 `ResumePreview.tsx` 适配。
+3. **Component Isolation**: `SectionHeader` 是纯展示组件，只接收 `title`。所有业务逻辑（如是否显示该模块）在父组件判断。
