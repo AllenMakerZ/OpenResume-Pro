@@ -3,7 +3,7 @@ import { ResumePreview } from './components/ResumePreview';
 import { Editor } from './components/Editor';
 import { INITIAL_RESUME_DATA } from './constants';
 import { ResumeData } from './types';
-import { Download, Printer, FileImage, Images, FileText } from 'lucide-react';
+import { Download, Printer, FileImage, Images, FileText, RotateCcw } from 'lucide-react';
 // @ts-ignore - dom-to-image 没有 TypeScript 类型定义
 import domtoimage from 'dom-to-image';
 import jsPDF from 'jspdf';
@@ -46,6 +46,13 @@ export default function App() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleReset = () => {
+    if (window.confirm('确定要重置所有数据吗？这将清除您的当前编辑。')) {
+      setResumeData(INITIAL_RESUME_DATA);
+      localStorage.removeItem('resumeData');
+    }
   };
 
   const handleExportPDF = async () => {
@@ -171,6 +178,10 @@ export default function App() {
           </div>
 
           <div className="flex gap-2">
+            <button onClick={handleReset} className="flex items-center gap-2 px-3 py-2 bg-white border border-red-200 hover:bg-red-50 text-red-600 rounded transition-colors text-sm font-medium" title="重置为默认模版">
+              <RotateCcw size={16} />
+              重置
+            </button>
             <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-black hover:bg-gray-800 text-white rounded transition-colors text-sm font-medium shadow-md" title="推荐使用此方式，可保留超链接和文字选中功能">
               <Printer size={16} />
               打印 / 另存为 PDF (推荐)
