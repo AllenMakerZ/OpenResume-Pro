@@ -54,3 +54,9 @@ export interface ResumeData {
   others: SectionItem[]; // Skills, Awards, etc.
   summary: string; // HTML content for Personal summary
 }
+
+export interface LayoutSettings {
+  fontSize: number;     // px, e.g. 14
+  lineHeight: number;   // multiple, e.g. 1.4
+  pagePadding: number;  // mm, e.g. 20
+}

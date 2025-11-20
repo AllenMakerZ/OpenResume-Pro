@@ -1,6 +1,9 @@
-import { ResumeData } from './types';
-import { v4 as uuidv4 } from 'uuid';
+import { BaseItem, EducationItem, WorkItem, ProjectItem, SectionItem, SectionKey, SectionSettings, ResumeData } from './types';
 
+// Re-export types
+export * from './types';
+
+// Ensure INITIAL_RESUME_DATA matches the ResumeData interface
 export const INITIAL_RESUME_DATA: ResumeData = {
   basics: {
     name: '李白',

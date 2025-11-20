@@ -2,11 +2,18 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ResumePreview } from './components/ResumePreview';
 import { Editor } from './components/Editor';
 import { INITIAL_RESUME_DATA } from './constants';
-import { ResumeData } from './types';
-import { Download, Printer, FileImage, Images, FileText, RotateCcw } from 'lucide-react';
+import { ResumeData, LayoutSettings } from './types';
+import { Download, Printer, FileImage, Images, FileText, RotateCcw, Type, ArrowUpDown, Maximize } from 'lucide-react';
 // @ts-ignore - dom-to-image 没有 TypeScript 类型定义
 import domtoimage from 'dom-to-image';
 import jsPDF from 'jspdf';
+
+// 默认布局配置：宽松适中，适合 A4
+const DEFAULT_LAYOUT: LayoutSettings = {
+  fontSize: 14,
+  lineHeight: 1.4,
+  pagePadding: 20
+};
 
 export default function App() {
   const [resumeData, setResumeData] = useState<ResumeData>(() => {
@@ -22,6 +29,14 @@ export default function App() {
     return INITIAL_RESUME_DATA;
   });
 
+  const [layoutSettings, setLayoutSettings] = useState<LayoutSettings>(() => {
+    const saved = localStorage.getItem('layoutSettings');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return DEFAULT_LAYOUT;
+  });
+
   const previewRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
@@ -31,6 +46,11 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('resumeData', JSON.stringify(resumeData));
   }, [resumeData]);
+
+  // Persist layout settings
+  useEffect(() => {
+    localStorage.setItem('layoutSettings', JSON.stringify(layoutSettings));
+  }, [layoutSettings]);
 
   useEffect(() => {
     if (!previewRef.current) return;
@@ -50,18 +70,26 @@ export default function App() {
     const resizeObserver = new ResizeObserver(updatePageCount);
     resizeObserver.observe(previewRef.current);
     return () => resizeObserver.disconnect();
-  }, [viewMode, resumeData]); // Re-run on view mode or data change
+  }, [viewMode, resumeData, layoutSettings]);
 
   const handlePrint = () => {
     window.print();
   };
 
   const handleReset = () => {
-    if (window.confirm('确定要重置所有数据吗？这将清除您的当前编辑。')) {
+    if (window.confirm('确定要重置所有数据吗？这将清除您的当前编辑和排版设置。')) {
       setResumeData(INITIAL_RESUME_DATA);
+      setLayoutSettings(DEFAULT_LAYOUT);
       localStorage.removeItem('resumeData');
+      localStorage.removeItem('layoutSettings');
     }
   };
+
+  // Range Generators
+  const fontSizes = Array.from({ length: 9 }, (_, i) => 10 + i); // 10 to 18
+  const lineHeights = Array.from({ length: 11 }, (_, i) => (1.0 + i * 0.1).toFixed(1)); // 1.0 to 2.0
+  // 10mm to 24mm, step 2. (Removed > 24mm as requested)
+  const paddings = Array.from({ length: 8 }, (_, i) => 10 + i * 2);
 
   const handleExportPDF = async () => {
     if (!previewRef.current) return;
@@ -84,8 +112,6 @@ export default function App() {
           transformOrigin: 'top left',
           width: `${previewElement.offsetWidth}px`,
           height: `${previewElement.offsetHeight}px`,
-          // Ensure margins are reset/ignored for image export if needed, 
-          // but usually user sees what they get.
         }
       });
 
@@ -159,7 +185,7 @@ export default function App() {
       <div className="flex-1 flex flex-col h-full relative print:block print:h-auto print:static">
 
         {/* Toolbar */}
-        <div className="bg-white border-b p-4 flex justify-between items-center shadow-sm z-20 print:hidden">
+        <div className="bg-white border-b p-4 flex justify-between items-center shadow-sm z-20 print:hidden flex-wrap gap-y-2">
           <div className="flex items-center gap-4">
             <div className="flex bg-gray-100 p-1 rounded-lg">
               <button
@@ -180,27 +206,76 @@ export default function App() {
 
             <div className="h-4 w-px bg-gray-200" />
 
-            <div className="text-gray-500 text-xs font-medium">
+            <div className="text-gray-500 text-xs font-medium whitespace-nowrap">
               共 {totalPages} 页
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center flex-wrap">
+            {/* Layout Controls */}
+            <div className="flex items-center gap-2 mr-2">
+
+              {/* Font Size Select */}
+              <div className="relative flex items-center" title="字体大小 (px)">
+                <Type size={14} className="absolute left-2 text-gray-500 pointer-events-none" />
+                <select
+                  value={layoutSettings.fontSize}
+                  onChange={(e) => setLayoutSettings(s => ({ ...s, fontSize: Number(e.target.value) }))}
+                  className="pl-7 pr-2 py-1.5 bg-white border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none hover:bg-gray-50 cursor-pointer"
+                  style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
+                >
+                  {fontSizes.map(size => (
+                    <option key={size} value={size}>{size} px</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Line Height Select */}
+              <div className="relative flex items-center" title="行高倍数">
+                <ArrowUpDown size={14} className="absolute left-2 text-gray-500 pointer-events-none" />
+                <select
+                  value={layoutSettings.lineHeight}
+                  onChange={(e) => setLayoutSettings(s => ({ ...s, lineHeight: Number(e.target.value) }))}
+                  className="pl-7 pr-2 py-1.5 bg-white border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none hover:bg-gray-50 cursor-pointer"
+                  style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
+                >
+                  {lineHeights.map(lh => (
+                    <option key={lh} value={lh}>{lh} x</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Page Padding Select */}
+              <div className="relative flex items-center" title="页边距 (mm)">
+                <Maximize size={14} className="absolute left-2 text-gray-500 pointer-events-none" />
+                <select
+                  value={layoutSettings.pagePadding}
+                  onChange={(e) => setLayoutSettings(s => ({ ...s, pagePadding: Number(e.target.value) }))}
+                  className="pl-7 pr-2 py-1.5 bg-white border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none hover:bg-gray-50 cursor-pointer"
+                  style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
+                >
+                  {paddings.map(p => (
+                    <option key={p} value={p}>{p} mm</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <button onClick={handleReset} className="flex items-center gap-2 px-3 py-2 bg-white border border-red-200 hover:bg-red-50 text-red-600 rounded transition-colors text-sm font-medium" title="重置为默认模版">
               <RotateCcw size={16} />
-              重置
+              <span className="hidden sm:inline">重置</span>
             </button>
-            <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-black hover:bg-gray-800 text-white rounded transition-colors text-sm font-medium shadow-md" title="推荐使用此方式，可保留超链接和文字选中功能">
+            <button onClick={handlePrint} className="hidden lg:flex items-center gap-2 px-4 py-2 bg-black hover:bg-gray-800 text-white rounded transition-colors text-sm font-medium shadow-md" title="推荐使用此方式，可保留超链接和文字选中功能">
               <Printer size={16} />
-              打印 / 另存为 PDF (推荐)
+              打印
             </button>
-            <button onClick={handleExportPNG} disabled={isExporting} className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded transition-colors text-sm font-medium">
+            <button onClick={handleExportPNG} disabled={isExporting} className="hidden sm:flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded transition-colors text-sm font-medium">
               <FileImage size={16} />
-              {isExporting ? '导出中...' : '下载 PNG'}
+              PNG
             </button>
-            <button onClick={handleExportPDF} disabled={isExporting} className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded transition-colors text-sm font-medium">
+            <button onClick={handleExportPDF} disabled={isExporting} className="hidden sm:flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded transition-colors text-sm font-medium">
               <Download size={16} />
-              {isExporting ? '生成中...' : '下载 PDF (图片版)'}
+              PDF
             </button>
           </div>
         </div>
@@ -208,7 +283,7 @@ export default function App() {
         {/* Preview Scroll Area */}
         <div className="flex-1 overflow-y-auto p-8 bg-gray-200/50 flex justify-center print:p-0 print:m-0 print:bg-white print:overflow-visible print:h-auto print:block">
           <div className="scale-[0.85] md:scale-100 origin-top transition-transform duration-300 print:transform-none print:scale-100 print:w-full print:h-auto">
-            <ResumePreview ref={previewRef} data={resumeData} viewMode={viewMode} />
+            <ResumePreview ref={previewRef} data={resumeData} viewMode={viewMode} layoutSettings={layoutSettings} />
           </div>
         </div>
       </div>
