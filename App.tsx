@@ -8,6 +8,10 @@ import { Download, Printer, FileImage, Images, FileText, RotateCcw, Type, ArrowU
 import domtoimage from 'dom-to-image';
 import jsPDF from 'jspdf';
 
+// 与 ResumePreview 中保持一致：A4 高度约 1123px（对应 297mm）
+const A4_HEIGHT_PX = 1123;
+const A4_HEIGHT_MM = 297;
+
 // 默认布局配置：宽松适中，适合 A4
 const DEFAULT_LAYOUT: LayoutSettings = {
   fontSize: 14,
@@ -59,10 +63,21 @@ export default function App() {
     const updatePageCount = () => {
       if (!previewRef.current) return;
       const heightPx = previewRef.current.offsetHeight;
-      // A4 height in px at 96DPI is approx 1123px (297mm)
-      const pageHeight = 1123;
-      // Use -1 tolerance to handle potential sub-pixel rounding differences
-      setTotalPages(Math.max(1, Math.ceil((heightPx - 1) / pageHeight)));
+      // 方案 C：页数计算尽量贴近打印布局
+      // 1. 将 mm 与 px 做一次统一换算
+      const pxPerMm = A4_HEIGHT_PX / A4_HEIGHT_MM; // ≈ 3.78
+      const paddingMm = layoutSettings.pagePadding;
+      const paddingPx = paddingMm * pxPerMm;
+
+      // 2. 屏幕预览下，container 的高度 = 内容高度 + 上下 padding
+      const contentHeightPx = Math.max(0, heightPx - 2 * paddingPx);
+
+      // 3. 打印时每一页「有效内容区」约为：A4 总高 - 上下 Table Spacer（与 pagePadding 对应）
+      const effectivePageHeightPx = Math.max(1, (A4_HEIGHT_MM - 2 * paddingMm) * pxPerMm);
+
+      // 4. 使用内容高度 / 有效页高来预估页数，减去 1px 作为容差，避免浮点误差导致「空白第二页」
+      const estimatedPages = Math.ceil(Math.max(0, contentHeightPx - 1) / effectivePageHeightPx);
+      setTotalPages(Math.max(1, estimatedPages));
     };
 
     // Initial check

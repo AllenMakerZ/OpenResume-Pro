@@ -52,7 +52,9 @@
         margin: 0 !important;
         box-shadow: none !important;
         width: 210mm !important;
-        min-height: 297mm !important;
+        /* 方案 B：打印时不强制 min-height 为整张 A4，让实际高度完全由内容 + Table Spacer 决定，避免内容略超时被硬拆为 2 页空白 */
+        min-height: auto !important;
+        height: auto !important;
         overflow: visible !important;
         print-color-adjust: exact;
         -webkit-print-color-adjust: exact;
