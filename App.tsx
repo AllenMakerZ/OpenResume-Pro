@@ -92,6 +92,23 @@ export default function App() {
     window.print();
   };
 
+  // 帮助方法：在「图片预览」布局下执行导出，确保导出的长图与图片预览一致（不做分页、不插入空白间隔）
+  const runInImageView = async <T,>(task: () => Promise<T>): Promise<T> => {
+    const prevMode = viewMode;
+    if (prevMode !== 'image') {
+      setViewMode('image');
+      // 等待两帧，确保 React 完成重新渲染并更新 DOM
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    }
+    try {
+      return await task();
+    } finally {
+      if (prevMode !== 'image') {
+        setViewMode(prevMode);
+      }
+    }
+  };
+
   const handleReset = () => {
     if (window.confirm('确定要重置所有数据吗？这将清除您的当前编辑和排版设置。')) {
       setResumeData(INITIAL_RESUME_DATA);
@@ -111,42 +128,49 @@ export default function App() {
     if (!previewRef.current) return;
     setIsExporting(true);
     try {
-      const previewElement = previewRef.current;
+      await runInImageView(async () => {
+        if (!previewRef.current) return;
+        const previewElement = previewRef.current;
 
-      // 使用 2 倍分辨率以提高导出质量
-      const scale = 2;
-      const width = previewElement.offsetWidth * scale;
-      const height = previewElement.offsetHeight * scale;
+        // 使用 2 倍分辨率以提高导出质量
+        const scale = 2;
+        const width = previewElement.offsetWidth * scale;
+        const height = previewElement.offsetHeight * scale;
 
-      // 使用 dom-to-image，对 clip-path 支持更好
-      const dataUrl = await domtoimage.toPng(previewElement, {
-        quality: 1,
-        width: width,
-        height: height,
-        style: {
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
-          width: `${previewElement.offsetWidth}px`,
-          height: `${previewElement.offsetHeight}px`,
-        }
+        // 使用 dom-to-image，对 clip-path 支持更好
+        const dataUrl = await domtoimage.toPng(previewElement, {
+          quality: 1,
+          width: width,
+          height: height,
+          style: {
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            width: `${previewElement.offsetWidth}px`,
+            height: `${previewElement.offsetHeight}px`,
+          }
+        });
+
+        // 创建一个临时 Image 对象来获取尺寸
+        const img = new Image();
+        img.src = dataUrl;
+        await new Promise((resolve) => {
+          img.onload = resolve;
+        });
+
+        // 先用 A4 计算「目标宽度」，保持与 A4 等宽
+        const temp = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = temp.internal.pageSize.getWidth();
+
+        // 计算在该宽度下的图片高度（mm）
+        const imgHeightInPdf = (img.height * pdfWidth) / img.width;
+
+        // 使用自定义页面尺寸：宽度等同 A4，高度按整张长图自适应
+        const pdf = new jsPDF('p', 'mm', [pdfWidth, imgHeightInPdf]);
+
+        // 整张长图塞进单页 PDF，不截断高度
+        pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, imgHeightInPdf);
+        pdf.save(`${resumeData.basics.name}_Resume.pdf`);
       });
-
-      // 创建一个临时 Image 对象来获取尺寸
-      const img = new Image();
-      img.src = dataUrl;
-      await new Promise((resolve) => {
-        img.onload = resolve;
-      });
-
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-
-      // 计算缩放比例
-      const imgHeightInPdf = (img.height * pdfWidth) / img.width;
-
-      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, imgHeightInPdf);
-      pdf.save(`${resumeData.basics.name}_Resume.pdf`);
     } catch (error) {
       console.error("PDF Generation Error:", error);
       alert("Could not generate PDF. Please try printing to PDF instead.");
@@ -159,30 +183,33 @@ export default function App() {
     if (!previewRef.current) return;
     setIsExporting(true);
     try {
-      const previewElement = previewRef.current;
+      await runInImageView(async () => {
+        if (!previewRef.current) return;
+        const previewElement = previewRef.current;
 
-      // 使用 2 倍分辨率以提高导出质量
-      const scale = 2;
-      const width = previewElement.offsetWidth * scale;
-      const height = previewElement.offsetHeight * scale;
+        // 使用 2 倍分辨率以提高导出质量
+        const scale = 2;
+        const width = previewElement.offsetWidth * scale;
+        const height = previewElement.offsetHeight * scale;
 
-      // 使用 dom-to-image，对 clip-path 支持更好
-      const dataUrl = await domtoimage.toPng(previewElement, {
-        quality: 1,
-        width: width,
-        height: height,
-        style: {
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
-          width: `${previewElement.offsetWidth}px`,
-          height: `${previewElement.offsetHeight}px`
-        }
+        // 使用 dom-to-image，对 clip-path 支持更好
+        const dataUrl = await domtoimage.toPng(previewElement, {
+          quality: 1,
+          width: width,
+          height: height,
+          style: {
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            width: `${previewElement.offsetWidth}px`,
+            height: `${previewElement.offsetHeight}px`
+          }
+        });
+
+        const link = document.createElement('a');
+        link.download = `${resumeData.basics.name}_Resume.png`;
+        link.href = dataUrl;
+        link.click();
       });
-
-      const link = document.createElement('a');
-      link.download = `${resumeData.basics.name}_Resume.png`;
-      link.href = dataUrl;
-      link.click();
     } catch (error) {
       console.error("PNG Generation Error:", error);
     } finally {
