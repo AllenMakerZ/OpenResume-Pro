@@ -33,11 +33,12 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({ title }) => {
         
         {/* Main Content Block */}
         {/* 
-            - pl-6: Reduced left padding to move text slightly left.
-            - pr-10: Increased right padding to ensure text doesn't hit the slope area.
+            - pl-6: 左侧留白，保证标题不会贴边。
+            - pr-16: 右侧留白显著大于斜切宽度 12px，确保导出为图片/PDF 时最后一个字不会被斜切区域或截图边界裁掉。
+              （保持几何参数不变，仅通过增加安全留白解决“缺一个字”的问题）
         */}
         <div 
-            className="bg-black text-white pl-6 pr-10 py-1 font-bold tracking-wide text-sm relative z-10"
+            className="bg-black text-white pl-6 pr-16 py-1 font-bold tracking-wide text-sm relative z-10"
             style={blackBlockStyle}
         >
           {title || '\u00A0'}

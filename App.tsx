@@ -1,12 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { ResumePreview } from './components/ResumePreview';
 import { Editor } from './components/Editor';
 import { INITIAL_RESUME_DATA } from './constants';
 import { ResumeData, LayoutSettings } from './types';
-import { Download, Printer, FileImage, Images, FileText, RotateCcw, Type, ArrowUpDown, Maximize } from 'lucide-react';
+import { Download, Printer, FileImage, Images, FileText, RotateCcw, Type, ArrowUpDown, Maximize, HelpCircle, X } from 'lucide-react';
 // @ts-ignore - dom-to-image 没有 TypeScript 类型定义
 import domtoimage from 'dom-to-image';
 import jsPDF from 'jspdf';
+// @ts-ignore - 直接以原始文本方式导入 README 用于「使用须知」模态框展示
+import usageDoc from './README.md?raw';
 
 // 与 ResumePreview 中保持一致：A4 高度约 1123px（对应 297mm）
 const A4_HEIGHT_PX = 1123;
@@ -46,6 +49,7 @@ export default function App() {
   const [totalPages, setTotalPages] = useState(1);
   const [viewMode, setViewMode] = useState<'image' | 'pdf'>('pdf');
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const [showUsageModal, setShowUsageModal] = useState(false);
 
   // Persist data
   useEffect(() => {
@@ -317,7 +321,7 @@ export default function App() {
             <div className="relative">
               <button
                 onClick={() => setShowDownloadMenu(!showDownloadMenu)}
-                className="hidden sm:flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded transition-colors text-sm font-medium"
+                className="hidden sm:flex items-center gap-2 px-3 py-2 bg-black hover:bg-gray-800 text-white rounded transition-colors text-sm font-medium shadow-md"
               >
                 <Download size={16} />
                 下载
@@ -350,6 +354,16 @@ export default function App() {
                 </>
               )}
             </div>
+
+            {/* Usage Doc Button */}
+            <button
+              onClick={() => setShowUsageModal(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-black hover:bg-gray-800 text-white rounded transition-colors text-sm font-medium shadow-md"
+              title="查看本工具的详细使用说明"
+            >
+              <HelpCircle size={16} />
+              使用须知
+            </button>
           </div>
         </div>
 
@@ -359,6 +373,37 @@ export default function App() {
             <ResumePreview ref={previewRef} data={resumeData} viewMode={viewMode} layoutSettings={layoutSettings} />
           </div>
         </div>
+
+        {/* Usage Modal */}
+        {showUsageModal && (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 print:hidden">
+              <div className="bg-white rounded-lg shadow-xl max-w-4xl w-[90%] max-h-[80vh] flex flex-col">
+              <div className="px-4 py-3 border-b flex items-center justify-between">
+                <h2 className="text-[20px] font-semibold text-gray-900">使用须知</h2>
+                <button
+                  onClick={() => setShowUsageModal(false)}
+                  className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+                  aria-label="关闭使用须知"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="px-4 py-3 overflow-auto text-gray-800">
+                <div className="usage-markdown leading-relaxed">
+                  <ReactMarkdown>{usageDoc}</ReactMarkdown>
+                </div>
+              </div>
+              <div className="px-4 py-2 border-t flex justify-end">
+                <button
+                  onClick={() => setShowUsageModal(false)}
+                  className="px-3 py-1.5 text-[20px] font-medium rounded bg-black text-white hover:bg-gray-800 transition-colors"
+                >
+                  我知道了
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
